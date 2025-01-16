@@ -1,0 +1,56 @@
+/* Set background image for the homepage */
+
+.home-container {
+    background-image: url('Pictures/Background.jpg');
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align to top instead of center */
+    padding-top: 5%; /* Add 10% padding from the top */
+}
+
+/* Container for content inside the homepage */
+.content-container {
+    text-align: center;
+    position: relative;
+    animation: moveElements 5s ease-in-out infinite; /* Apply animation */
+}
+
+/* Style for the headline */
+.headline {
+    color: white;
+    font-size: 3rem;
+    margin-bottom: 20px;
+    animation: slideInFromBottom 2s ease-out;
+}
+
+/* Animation for moving elements */
+@keyframes moveElements {
+    0% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+/* Animation for the headline and button (slide in from bottom) */
+@keyframes slideInFromBottom {
+    0% {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

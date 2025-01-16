@@ -1,0 +1,6 @@
+@Unishelf.Server_HostAddress = http://localhost:5286
+
+GET {{Unishelf.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

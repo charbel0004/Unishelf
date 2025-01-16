@@ -1,0 +1,109 @@
+/* Reset default margins and padding */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.logo {
+    width: fit-content;
+    justify-content: flex-start;
+    font: italic;
+}
+
+/* Set default styles for the entire page */
+body {
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+}
+
+/* Header styles */
+.header {
+    background-color: #333;
+    display: flex;
+    color: white;
+    padding: 1rem;
+    position: sticky;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    justify-content: space-between; /* This will push logo and nav apart */
+}
+
+.nav {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center; /* This will vertically center the navigation */
+}
+
+/* Wrapper for header content */
+.header-content {
+    max-width: 1200px;
+    margin-top: 50%;
+    display: flex;
+    justify-content: space-between; /* This ensures space between elements */
+    align-items: center;
+}
+
+/* Main navigation container */
+.main-nav {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+/* Navigation styles */
+.nav-links {
+    list-style: none;
+    margin-top: 5%;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+    .nav-links li a {
+        color: white;
+        text-decoration: none;
+        padding: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+        .nav-links li a:hover {
+            text-decoration: underline;
+            opacity: 0.8;
+        }
+
+
+/* Media queries for responsive design */
+@media screen and (max-width: 768px) {
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: #333;
+        flex-direction: column;
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+        .nav-links.active {
+            display: flex;
+        }
+
+        .nav-links li {
+            width: 100%;
+            text-align: center;
+        }
+
+            .nav-links li a {
+                display: block;
+                padding: 0.75rem;
+            }
+}

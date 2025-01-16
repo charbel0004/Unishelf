@@ -1,0 +1,228 @@
+.wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    background-color: #2c2c2c;
+    background-image: url('/public/Pictures/loginbk.jpg'); /* Replace with your stone texture file path */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    justify-content: flex-start;
+    align-items: center;
+    padding-left: 10%;
+}
+
+.row {
+    display: flex;
+    flex-direction:row;
+    gap: 5px;
+    
+}
+
+    .row > div {
+        flex: 1;
+    }
+
+.error {
+    color: red;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+
+.illustration {
+    flex: 1;
+    display: none;
+    margin-right:5%;/* Hidden on mobile */
+}
+
+    .illustration img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+.form {
+    width: fit-content;
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background-color: #2c2c2cd9;
+    border-radius: 12px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    margin-right: 20%;
+}
+
+.heading {
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #ffffff;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+}
+
+    form div {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+
+    }
+
+label {
+    font-size: 0.9rem;
+    color: #cccccc;
+    font-weight: 500;
+}
+
+input {
+    padding: 0.8rem;
+    border: 1px solid #404040;
+    border-radius: 6px;
+    font-size: 1rem;
+    background-color: #333333;
+    color: white;
+    transition: border-color 0.3s ease;
+}
+
+    input:focus {
+        outline: none;
+        border-color: #0066cc;
+        box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+    }
+
+    input::placeholder {
+        color: #666666;
+    }
+
+button {
+    background-color: #0066cc;
+    color: white;
+    padding: 1rem;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 1rem;
+}
+
+    button:hover {
+        background-color: #0052a3;
+    }
+
+p {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: #cccccc;
+}
+
+a {
+    color: #3399ff;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+    a:hover {
+        color: #66b3ff;
+    }
+
+    .PhoneInput{
+        flex-direction:row;
+    }
+    .PhoneInputCountry{
+        flex-direction:row;
+    }
+
+/* Rest of the original styles remain the same until media queries */
+
+@media (min-width: 768px) {
+    .illustration {
+        display: block;
+        margin-left: 2rem;
+    }
+
+    .form {
+        padding: 2.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .wrapper {
+        padding: 1rem;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .form {
+        width: 90%;
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 1.5rem;
+    }
+
+    .row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    form div {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .heading {
+        font-size: 1.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    input {
+        padding: 0.7rem;
+    }
+
+    button {
+        padding: 0.8rem;
+        margin-top: 0.8rem;
+    }
+
+    p {
+        margin-top: 1rem;
+        font-size: 0.9rem;
+    }
+}
+.success-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 10px 20px;
+    background-color: green;
+    color: white;
+    border-radius: 5px;
+    font-size: 16px;
+    z-index: 1000;
+}
+
+/* Phone input specific styles */
+.PhoneInput {
+    flex-direction: row !important;
+}
+
+.PhoneInputCountry {
+    flex-direction: row !important;
+}
+
+@media (max-width: 768px) {
+    .PhoneInputInput {
+        flex: 1;
+    }
+}

@@ -1,0 +1,29 @@
+.product-card {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 10px;
+    width: 200px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+    .product-card img {
+        width: 100%;
+        height: auto;
+    }
+
+.product-info {
+    margin-top: 10px;
+}
+
+    .product-info button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 10px;
+        cursor: pointer;
+    }
+
+        .product-info button:hover {
+            background-color: #218838;
+        }
