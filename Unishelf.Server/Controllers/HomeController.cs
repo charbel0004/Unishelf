@@ -120,6 +120,7 @@ namespace Unishelf.Server.Controllers
                                 string email = reader["EmailAddress"].ToString();
                                 string phoneNumber = reader["PhoneNumber"].ToString();
                                 string userName = reader["UserName"].ToString();
+                                int id = Convert.ToInt32(reader["UserID"]);
                                 bool isCustomer = Convert.ToBoolean(reader["IsCustomer"]);
                                 bool isEmployee = Convert.ToBoolean(reader["IsEmployee"]);
                                 bool isManager = Convert.ToBoolean(reader["IsManager"]);
@@ -148,14 +149,15 @@ namespace Unishelf.Server.Controllers
 
                                 var claims = new[]
                                 {
-                            new Claim(ClaimTypes.Name, userName),
-                            new Claim(ClaimTypes.GivenName, name),
-                            new Claim(ClaimTypes.Email, email),
-                            new Claim("PhoneNumber", phoneNumber),
-                            new Claim("Role_Customer", isCustomer.ToString()),
-                            new Claim("Role_Employee", isEmployee.ToString()),
-                            new Claim("Role_Manager", isManager.ToString())
-                        };
+                                    new Claim("UserID", id.ToString()),
+                                    new Claim(ClaimTypes.Name, userName),
+                                    new Claim(ClaimTypes.GivenName, name),
+                                    new Claim(ClaimTypes.Email, email),
+                                    new Claim("PhoneNumber", phoneNumber),
+                                    new Claim("Role_Customer", isCustomer.ToString()),
+                                    new Claim("Role_Employee", isEmployee.ToString()),
+                                    new Claim("Role_Manager", isManager.ToString())
+                                };
 
                                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
                                 var token = new JwtSecurityToken(

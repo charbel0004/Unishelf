@@ -11,6 +11,42 @@
     align-items: flex-start; /* Align to top instead of center */
     padding-top: 5%; /* Add 10% padding from the top */
 }
+.profile {
+    position: relative;
+    cursor: pointer;
+}
+
+.profile-dropdown {
+    position: absolute;
+    top: 30px;
+    right: 0;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    width: 200px;
+    z-index: 1000;
+}
+
+    .profile-dropdown p {
+        margin: 5px 0;
+        font-size: 14px;
+    }
+
+    .profile-dropdown button {
+        width: 100%;
+        padding: 8px;
+        border: none;
+        background-color: #f44336;
+        color: #fff;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+        .profile-dropdown button:hover {
+            background-color: #d32f2f;
+        }
 
 /* Container for content inside the homepage */
 .content-container {

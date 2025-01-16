@@ -9,7 +9,7 @@ interface LoginProps {
     setLoggedInUser: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-const Login: FC<LoginProps> = ({ setLoggedInUser }) => {
+const Login: FC<LoginProps> = () => {
     const [isSignUp, setIsSignUp] = useState(false);
     const [phoneNumber, setPhoneNumber] = useState<string | undefined>();
     const [formData, setFormData] = useState({
@@ -53,11 +53,16 @@ const Login: FC<LoginProps> = ({ setLoggedInUser }) => {
         }
     };
 
-    const decodeToken = (token: string) => {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        return JSON.parse(window.atob(base64));
-    };
+
+    interface SubmitData {
+        username?: string;
+        email?: string;
+        password: string;
+        firstName?: string;
+        lastName?: string;
+        phoneNumber?: string;
+        usernameOrEmail?: string;
+    }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -68,10 +73,21 @@ const Login: FC<LoginProps> = ({ setLoggedInUser }) => {
             if (passwordError || confirmPasswordError) return;
         }
 
-        const dataToSubmit = {
-            usernameOrEmail: formData.username || formData.email,
+        // Define the data to submit
+        const dataToSubmit: SubmitData = {
             password: formData.password,
-            ...(isSignUp && { firstName: formData.firstName, lastName: formData.lastName, phoneNumber }),
+            ...(isSignUp
+                ? {
+                    username: formData.username,  // Include username in sign up
+                    email: formData.email,        // Include email in sign up
+                    firstName: formData.firstName,
+                    lastName: formData.lastName,
+                    phoneNumber,
+                }
+                : {
+                    // For login, only send username or email (whichever is provided)
+                    usernameOrEmail: formData.username || formData.email,
+                }),
         };
 
         try {
@@ -92,19 +108,10 @@ const Login: FC<LoginProps> = ({ setLoggedInUser }) => {
             if (response.ok) {
                 if (isSignUp) {
                     setSuccessMessage('User created successfully!');
-                    setLoggedInUser(formData.username);
-                    localStorage.setItem('loggedInUser', formData.username);
+                    localStorage.setItem("token", result.token);
                     window.location.reload();
                 } else {
-                    setLoggedInUser(result.username);
-                    localStorage.setItem('loggedInUser', result.username);
-                    localStorage.setItem('authToken', result.token);
-
-                    const decodedToken = decodeToken(result.token);
-                    const userId = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/primarysid'];
-
-                    console.log('Logged-in user ID:', userId);
-
+                    localStorage.setItem("token", result.token);
                     navigate('/');
                 }
             } else {
@@ -115,6 +122,7 @@ const Login: FC<LoginProps> = ({ setLoggedInUser }) => {
             console.error('Error:', error);
         }
     };
+
 
     const isFormValid = () => {
         if (isSignUp) {
