@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Unishelf.Server.Data;
 
@@ -11,9 +12,11 @@ using Unishelf.Server.Data;
 namespace Unishelf.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250116154627_EditBit")]
+    partial class EditBit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -76,28 +79,6 @@ namespace Unishelf.Server.Migrations
                     b.HasKey("UserID");
 
                     b.ToTable("User");
-                });
-
-            modelBuilder.Entity("Unishelf.Server.Models.BrandImages", b =>
-                {
-                    b.Property<int>("BrandImagesID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BrandImagesID"));
-
-                    b.Property<int>("BrandID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("BrandImage")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("BrandImagesID");
-
-                    b.HasIndex("BrandID");
-
-                    b.ToTable("BrandImages");
                 });
 
             modelBuilder.Entity("Unishelf.Server.Models.Brands", b =>
@@ -168,28 +149,6 @@ namespace Unishelf.Server.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("Unishelf.Server.Models.Images", b =>
-                {
-                    b.Property<int>("ImageID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ImageID"));
-
-                    b.Property<string>("Image")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ProductID")
-                        .HasColumnType("int");
-
-                    b.HasKey("ImageID");
-
-                    b.HasIndex("ProductID");
-
-                    b.ToTable("Images");
-                });
-
             modelBuilder.Entity("Unishelf.Server.Models.Products", b =>
                 {
                     b.Property<int>("ProductID")
@@ -246,17 +205,6 @@ namespace Unishelf.Server.Migrations
                     b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("Unishelf.Server.Models.BrandImages", b =>
-                {
-                    b.HasOne("Unishelf.Server.Models.Brands", "Brands")
-                        .WithMany("BrandImages")
-                        .HasForeignKey("BrandID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Brands");
-                });
-
             modelBuilder.Entity("Unishelf.Server.Models.Cart", b =>
                 {
                     b.HasOne("Unishelf.Server.Models.Products", "Products")
@@ -274,17 +222,6 @@ namespace Unishelf.Server.Migrations
                     b.Navigation("Products");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Unishelf.Server.Models.Images", b =>
-                {
-                    b.HasOne("Unishelf.Server.Models.Products", "Products")
-                        .WithMany("Images")
-                        .HasForeignKey("ProductID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("Unishelf.Server.Models.Products", b =>
@@ -313,8 +250,6 @@ namespace Unishelf.Server.Migrations
 
             modelBuilder.Entity("Unishelf.Server.Models.Brands", b =>
                 {
-                    b.Navigation("BrandImages");
-
                     b.Navigation("Products");
                 });
 
@@ -326,8 +261,6 @@ namespace Unishelf.Server.Migrations
             modelBuilder.Entity("Unishelf.Server.Models.Products", b =>
                 {
                     b.Navigation("Cart");
-
-                    b.Navigation("Images");
                 });
 #pragma warning restore 612, 618
         }

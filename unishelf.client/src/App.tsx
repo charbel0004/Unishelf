@@ -4,6 +4,7 @@ import Header from "./Header"; // Navigation bar component
 import Home from "./Home";
 import Cart from "./Cart";
 import LogIn from "./LogIn";
+import StockManager from './StockManager';
 
 const App: React.FC = () => {
     const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
@@ -32,6 +33,7 @@ const App: React.FC = () => {
                 <Route path="/" element={<Home />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/LogIn" element={<LogIn setLoggedInUser={setLoggedInUser} />} />
+                <Route path="/StockManager" element={<StockManager />} />
             </Routes>
         </div>
     );

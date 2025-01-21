@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Unishelf.Server.Models;
 
 namespace Unishelf.Models
 {
@@ -34,9 +35,11 @@ namespace Unishelf.Models
         public bool IsCustomer { get; set; }
         public bool IsEmployee { get; set; }
         public bool IsManager { get; set; }
-
+        public bool Active { get; set; }
 
 
         public DateTime? LastLogIn { get; set; }
+
+        public ICollection<Cart> Cart {  get; set; }
     }
 }

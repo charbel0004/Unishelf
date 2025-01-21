@@ -1,0 +1,68 @@
+/* General Page Styling */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+}
+
+.stock-manager {
+    text-align: center;
+    padding: 20px;
+}
+
+.title {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Squares Container */
+.squares-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+/* Individual Square Styling */
+.square {
+    width: 150px;
+    height: 150px;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+/* Icon Styling */
+.icon {
+    font-size: 2.5rem;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+/* Label Styling */
+.label {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Hover Effects */
+.square:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+}
+
+    .square:hover .icon {
+        color: #007bff;
+    }
+
+    .square:hover .label {
+        color: #007bff;
+    }
