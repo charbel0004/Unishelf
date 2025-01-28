@@ -27,6 +27,8 @@ namespace Unishelf.Server.Models
 
         public int? PricePerMsq {get; set; }
 
+        public int? Price {  get; set; }
+
         public int? QtyPerBox { get; set; }
 
         public int? SqmPerBox { get; set; }

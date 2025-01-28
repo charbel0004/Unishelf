@@ -8,7 +8,7 @@ namespace Unishelf.Server.Models
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ImageID { get; set; }
 
-        public string Image {  get; set; }
+        public byte [] Image {  get; set; }
 
         [ForeignKey("ProductID")]
         public int ProductID { get; set; }

@@ -2,6 +2,9 @@
     padding: 20px;
     font-family: Arial, sans-serif;
 }
+body{
+    background: none;
+}
 
     .cart h2 {
         margin-bottom: 20px;

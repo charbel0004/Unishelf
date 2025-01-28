@@ -5,6 +5,7 @@ import Home from "./Home";
 import Cart from "./Cart";
 import LogIn from "./LogIn";
 import StockManager from './StockManager';
+import Products from './Products';
 
 const App: React.FC = () => {
     const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
@@ -34,6 +35,7 @@ const App: React.FC = () => {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/LogIn" element={<LogIn setLoggedInUser={setLoggedInUser} />} />
                 <Route path="/StockManager" element={<StockManager />} />
+                <Route path="/Products" element={<Products />} />
             </Routes>
         </div>
     );

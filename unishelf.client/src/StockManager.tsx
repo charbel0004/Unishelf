@@ -1,25 +1,40 @@
 import React from 'react';
 import './css/StockManager.css'; // Import the CSS file for styling
-import { FaBoxes, FaChartBar, FaTruck, FaWarehouse } from 'react-icons/fa';
+import { FaBoxes, FaTags, FaChartBar, FaWarehouse } from 'react-icons/fa';
+import { ImUsers } from "react-icons/im";
+import { FaBasketShopping } from 'react-icons/fa6';
 
-const StockManager = () => {
+const StockManager: React.FC = () => {
     const items = [
         { id: 1, label: 'Inventory', icon: <FaBoxes /> },
-        { id: 2, label: 'Reports', icon: <FaChartBar /> },
-        { id: 3, label: 'Suppliers', icon: <FaTruck /> },
-        { id: 4, label: 'Warehouse', icon: <FaWarehouse /> },
+        { id: 2, label: 'Products', icon: <FaWarehouse />, href: '/products' },
+        { id: 3, label: 'Brands', icon: <FaTags /> },
+        { id: 4, label: 'Reports', icon: <FaChartBar /> },
+        { id: 5, label: 'Users Management', icon: <ImUsers /> },
     ];
 
     return (
-        <div className="stock-manager">
-            <h1 className="title">Stock Manager</h1>
-            <div className="squares-container">
-                {items.map((item) => (
-                    <div key={item.id} className="square">
-                        <div className="icon">{item.icon}</div>
-                        <div className="label">{item.label}</div>
-                    </div>
-                ))}
+        // Use a div wrapper with an ID instead of <body>
+        <div id="stock-manager-page">
+            <div className="stock-manager">
+                <div className="squares-container">
+                    {items.map((item) => (
+                        <div key={item.id} className="square">
+                            {/* Wrap the entire square content inside an anchor tag */}
+                            {item.href ? (
+                                <a href={item.href} className="square-link">
+                                    <div className="icon">{item.icon}</div>
+                                    <div className="label">{item.label}</div>
+                                </a>
+                            ) : (
+                                <>
+                                    <div className="icon">{item.icon}</div>
+                                    <div className="label">{item.label}</div>
+                                </>
+                            )}
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );

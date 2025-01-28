@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useState, useEffect } from 'react';
 import 'react-phone-number-input/style.css';
 import PhoneInput from 'react-phone-number-input';
 import './css/LogIn.css';
@@ -20,15 +20,42 @@ const Login: FC<LoginProps> = () => {
         password: '',
         confirmPassword: '',
     });
+    const [usernames, setUsernames] = useState<string[]>([]);
+    const [isUsernameTaken, setIsUsernameTaken] = useState(false);
     const [passwordError, setPasswordError] = useState('');
     const [confirmPasswordError, setConfirmPasswordError] = useState('');
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const navigate = useNavigate();
 
+    // Fetch usernames from the API
+    useEffect(() => {
+        const fetchUsernames = async () => {
+            try {
+                const response = await fetch(`${config.API_URL}/api/Home/UN_GetUsernames`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setUsernames(data);
+                } else {
+                    console.error('Failed to fetch usernames');
+                }
+            } catch (error) {
+                console.error('Error fetching usernames:', error);
+            }
+        };
+
+        fetchUsernames();
+    }, []);
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
         setFormData((prevData) => ({ ...prevData, [id]: value }));
+
+        if (id === 'username') {
+            // Check if the username is taken
+            const usernameExists = usernames.includes(value);
+            setIsUsernameTaken(usernameExists);
+        }
 
         if (id === 'password') validatePassword(value);
         if (id === 'confirmPassword') validatePasswordMatch(value);
@@ -53,39 +80,26 @@ const Login: FC<LoginProps> = () => {
         }
     };
 
-
-    interface SubmitData {
-        username?: string;
-        email?: string;
-        password: string;
-        firstName?: string;
-        lastName?: string;
-        phoneNumber?: string;
-        usernameOrEmail?: string;
-    }
-
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         if (isSignUp) {
             validatePassword();
             validatePasswordMatch();
-            if (passwordError || confirmPasswordError) return;
+            if (passwordError || confirmPasswordError || isUsernameTaken) return;
         }
 
-        // Define the data to submit
-        const dataToSubmit: SubmitData = {
+        const dataToSubmit = {
             password: formData.password,
             ...(isSignUp
                 ? {
-                    username: formData.username,  // Include username in sign up
-                    email: formData.email,        // Include email in sign up
+                    username: formData.username,
+                    email: formData.email,
                     firstName: formData.firstName,
                     lastName: formData.lastName,
                     phoneNumber,
                 }
                 : {
-                    // For login, only send username or email (whichever is provided)
                     usernameOrEmail: formData.username || formData.email,
                 }),
         };
@@ -108,10 +122,10 @@ const Login: FC<LoginProps> = () => {
             if (response.ok) {
                 if (isSignUp) {
                     setSuccessMessage('User created successfully!');
-                    localStorage.setItem("token", result.token);
+                    localStorage.setItem('token', result.token);
                     window.location.reload();
                 } else {
-                    localStorage.setItem("token", result.token);
+                    localStorage.setItem('token', result.token);
                     navigate('/');
                 }
             } else {
@@ -123,7 +137,6 @@ const Login: FC<LoginProps> = () => {
         }
     };
 
-
     const isFormValid = () => {
         if (isSignUp) {
             return (
@@ -133,7 +146,8 @@ const Login: FC<LoginProps> = () => {
                 formData.email &&
                 formData.password &&
                 formData.confirmPassword &&
-                phoneNumber
+                phoneNumber &&
+                !isUsernameTaken
             );
         } else {
             return (formData.username || formData.email) && formData.password;
@@ -183,6 +197,9 @@ const Login: FC<LoginProps> = () => {
                                     value={formData.username}
                                     onChange={handleInputChange}
                                 />
+                                {isUsernameTaken && (
+                                    <p className="error">This username is already taken.</p>
+                                )}
                             </div>
                             <div>
                                 <label htmlFor="phone">Phone Number</label>
@@ -226,7 +243,9 @@ const Login: FC<LoginProps> = () => {
                                     value={formData.confirmPassword}
                                     onChange={handleInputChange}
                                 />
-                                {confirmPasswordError && <p className="error">{confirmPasswordError}</p>}
+                                {confirmPasswordError && (
+                                    <p className="error">{confirmPasswordError}</p>
+                                )}
                             </div>
                         </>
                     ) : (

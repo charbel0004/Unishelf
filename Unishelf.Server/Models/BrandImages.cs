@@ -11,7 +11,7 @@ namespace Unishelf.Server.Models
         [ForeignKey("BrandID")]
         public int BrandID { get; set; }
 
-        public string BrandImage {  get; set; }
+        public byte [] BrandImage {  get; set; }
 
         public Brands Brands { get; set; }
     }

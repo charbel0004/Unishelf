@@ -192,7 +192,42 @@ namespace Unishelf.Server.Controllers
             }
         }
 
+        [HttpGet("UN_GetUsernames")]
+        public IActionResult GetActiveUserNames()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(_dbContext.Database.GetConnectionString()))
+                {
+                    connection.Open();
 
+                    using (var command = new SqlCommand("[dbo].[UN_GetUserNames]", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        using (var reader = command.ExecuteReader())
+                        {
+                            var userNames = new List<string>();
+
+                            while (reader.Read())
+                            {
+                                userNames.Add(reader["UserName"].ToString());
+                            }
+
+                            return Ok(userNames);
+                        }
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                return StatusCode(500, new { message = "Database error", details = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Unexpected error", details = ex.Message });
+            }
+        }
 
     }
 }
