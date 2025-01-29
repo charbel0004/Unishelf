@@ -7,6 +7,8 @@ using Newtonsoft.Json;
 
 using Microsoft.EntityFrameworkCore;
 using System.Xml.Linq;
+using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 
 namespace Unishelf.Server.Controllers.StockManager
 {
@@ -149,10 +151,10 @@ namespace Unishelf.Server.Controllers.StockManager
                                 var product = new
                                 {
                                     ProductID = encryptedProductId,
-                                    BrandID = _encryptionHelper.Encrypt(decryptedBrandId),
+                                    BrandID = brandId,
                                     ProductName = reader["ProductName"]?.ToString(),
                                     Description = reader["Description"]?.ToString(),
-                                    CategoryID = _encryptionHelper.Encrypt(decryptedCategoryId),
+                                    CategoryID = categoryId,
                                     Quantity = reader["Quantity"]?.ToString(),
                                     Images = images
                                 };
@@ -205,6 +207,74 @@ namespace Unishelf.Server.Controllers.StockManager
         }
 
 
+
+
+        [HttpGet("GetProductDetails/{productId}")]
+        public async Task<IActionResult> GetProductDetails(string productId)
+        {
+            try
+            {
+                var decryptedProductId = _encryptionHelper.Decrypt(productId);
+
+                using (var connection = new SqlConnection(_dbContext.Database.GetConnectionString()))
+                {
+                    await connection.OpenAsync();
+
+                    using (SqlCommand command = new SqlCommand("dbo.UN_GetProductsDetails", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.Parameters.Add(new SqlParameter("@ProductID", SqlDbType.Int) { Value = int.Parse(decryptedProductId) });
+
+                        using (SqlDataReader reader = await command.ExecuteReaderAsync())
+                        {
+                            if (!reader.HasRows)
+                                return NotFound(new { Message = "Product not found or unavailable" });
+
+                            var productSet = new HashSet<string>(); // To track unique products
+                            var products = new List<object>();
+
+                            while (await reader.ReadAsync())
+                            {
+                                var encryptedProductId = _encryptionHelper.Encrypt(reader["ProductID"].ToString());
+
+                                if (productSet.Contains(encryptedProductId)) continue;
+                                productSet.Add(encryptedProductId);
+
+                                var imagesJson = reader["Images"]?.ToString();
+                                var images = DecodeImages(imagesJson);
+
+                                var product = new
+                                {
+                                    ProductID = encryptedProductId,
+                                    ProductName = reader["ProductName"].ToString(),
+                                    Description = reader["Description"].ToString(),
+                                    PricePerMsq = Convert.ToDecimal(reader["PricePerMsq"]),
+                                    QtyPerBox = Convert.ToInt32(reader["QtyPerBox"]),
+                                    SqmPerBox = Convert.ToDecimal(reader["SqmPerBox"]),
+                                    Quantity = Convert.ToInt32(reader["Quantity"]),
+                                    Available = Convert.ToBoolean(reader["Available"]),
+                                    BrandName = reader["BrandName"].ToString(),
+                                    CategoryName = reader["CategoryName"].ToString(),
+                                    Images = images
+                                };
+
+                                products.Add(product);
+                            }
+
+                            return Ok(products.Count == 1 ? products[0] : products);
+                        }
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                return StatusCode(500, new { Message = "Database error", Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Unexpected error", Error = ex.Message });
+            }
+        }
 
 
 

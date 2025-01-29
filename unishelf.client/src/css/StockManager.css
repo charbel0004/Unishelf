@@ -18,7 +18,7 @@ body {
     flex-direction: column; /* Stack title and squares vertically */
     align-items: center;
     margin: auto;
-    margin-top: 10%;
+    margin-top: 5%;
 }
 
 /* Title Styling */

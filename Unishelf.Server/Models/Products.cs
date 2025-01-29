@@ -37,6 +37,7 @@ namespace Unishelf.Server.Models
 
         public bool Available { get; set; }
 
+
        
         
         public Brands Brands { get; set; }

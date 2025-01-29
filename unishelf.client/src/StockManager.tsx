@@ -3,14 +3,16 @@ import './css/StockManager.css'; // Import the CSS file for styling
 import { FaBoxes, FaTags, FaChartBar, FaWarehouse } from 'react-icons/fa';
 import { ImUsers } from "react-icons/im";
 import { FaBasketShopping } from 'react-icons/fa6';
+import { TbCategoryPlus } from "react-icons/tb";
 
 const StockManager: React.FC = () => {
     const items = [
         { id: 1, label: 'Inventory', icon: <FaBoxes /> },
         { id: 2, label: 'Products', icon: <FaWarehouse />, href: '/products' },
         { id: 3, label: 'Brands', icon: <FaTags /> },
-        { id: 4, label: 'Reports', icon: <FaChartBar /> },
-        { id: 5, label: 'Users Management', icon: <ImUsers /> },
+        { id: 4, label: 'Categories', icon: <TbCategoryPlus /> },
+        { id: 5, label: 'Reports', icon: <FaChartBar /> },
+        { id: 6, label: 'Users Management', icon: <ImUsers /> },
     ];
 
     return (
