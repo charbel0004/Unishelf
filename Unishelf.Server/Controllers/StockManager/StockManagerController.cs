@@ -208,7 +208,6 @@ namespace Unishelf.Server.Controllers.StockManager
 
 
 
-
         [HttpGet("GetProductDetails/{productId}")]
         public async Task<IActionResult> GetProductDetails(string productId)
         {
@@ -240,21 +239,21 @@ namespace Unishelf.Server.Controllers.StockManager
                                 if (productSet.Contains(encryptedProductId)) continue;
                                 productSet.Add(encryptedProductId);
 
-                                var imagesJson = reader["Images"]?.ToString();
-                                var images = DecodeImages(imagesJson);
+                                var imagesJson = reader["Images"] != DBNull.Value ? reader["Images"].ToString() : null;
+                                var images = imagesJson != null ? DecodeImages(imagesJson) : new List<string>();
 
                                 var product = new
                                 {
                                     ProductID = encryptedProductId,
-                                    ProductName = reader["ProductName"].ToString(),
-                                    Description = reader["Description"].ToString(),
-                                    PricePerMsq = Convert.ToDecimal(reader["PricePerMsq"]),
-                                    QtyPerBox = Convert.ToInt32(reader["QtyPerBox"]),
-                                    SqmPerBox = Convert.ToDecimal(reader["SqmPerBox"]),
-                                    Quantity = Convert.ToInt32(reader["Quantity"]),
-                                    Available = Convert.ToBoolean(reader["Available"]),
-                                    BrandName = reader["BrandName"].ToString(),
-                                    CategoryName = reader["CategoryName"].ToString(),
+                                    ProductName = reader["ProductName"] != DBNull.Value ? reader["ProductName"].ToString() : string.Empty,
+                                    Description = reader["Description"] != DBNull.Value ? reader["Description"].ToString() : string.Empty,
+                                    PricePerMsq = reader["PricePerMsq"] != DBNull.Value ? Convert.ToDecimal(reader["PricePerMsq"]) : 0m,
+                                    QtyPerBox = reader["QtyPerBox"] != DBNull.Value ? Convert.ToInt32(reader["QtyPerBox"]) : 0,
+                                    SqmPerBox = reader["SqmPerBox"] != DBNull.Value ? Convert.ToDecimal(reader["SqmPerBox"]) : 0m,
+                                    Quantity = reader["Quantity"] != DBNull.Value ? Convert.ToInt32(reader["Quantity"]) : 0,
+                                    Available = reader["Available"] != DBNull.Value ? Convert.ToBoolean(reader["Available"]) : false,
+                                    BrandName = reader["BrandName"] != DBNull.Value ? reader["BrandName"].ToString() : string.Empty,
+                                    CategoryName = reader["CategoryName"] != DBNull.Value ? reader["CategoryName"].ToString() : string.Empty,
                                     Images = images
                                 };
 
@@ -275,6 +274,7 @@ namespace Unishelf.Server.Controllers.StockManager
                 return StatusCode(500, new { Message = "Unexpected error", Error = ex.Message });
             }
         }
+
 
 
 
