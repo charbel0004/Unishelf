@@ -4,8 +4,9 @@ import Header from "./Header"; // Navigation bar component
 import Home from "./Home";
 import Cart from "./Cart";
 import LogIn from "./LogIn";
-import StockManager from './StockManager';
+import Dashboard from './Dashboard';
 import Products from './Products';
+import BrandsandCategories from './BrandsandCategories';
 
 const App: React.FC = () => {
     const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
@@ -34,8 +35,9 @@ const App: React.FC = () => {
                 <Route path="/" element={<Home />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/LogIn" element={<LogIn setLoggedInUser={setLoggedInUser} />} />
-                <Route path="/StockManager" element={<StockManager />} />
+                <Route path="/Dashboard" element={<Dashboard />} />
                 <Route path="/Products" element={<Products />} />
+                <Route path="/BrandsandCategories" element={<BrandsandCategories />} />
             </Routes>
         </div>
     );

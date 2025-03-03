@@ -46,16 +46,17 @@ export default defineConfig({
         }
     },
     server: {
+        host: '0.0.0.0', // Allows access from other devices on the network
+        port: 61804,
+        https: {
+            key: fs.readFileSync(keyFilePath),
+            cert: fs.readFileSync(certFilePath),
+        },
         proxy: {
             '^/weatherforecast': {
                 target,
                 secure: false
             }
-        },
-        port: 61804,
-        https: {
-            key: fs.readFileSync(keyFilePath),
-            cert: fs.readFileSync(certFilePath),
         }
     }
 })

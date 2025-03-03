@@ -1,0 +1,413 @@
+﻿/* Setting white background for the entire page */
+.body {
+    background-color: white;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    font-family: Arial, sans-serif;
+    overflow-x: hidden;
+}
+
+
+
+/* Wrapper for the two divisions */
+.container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    height: auto;
+    padding: 20px;
+    box-sizing: border-box;
+    gap: 20px;
+    background-color: white;
+    min-height: calc(100vh - 40px); /* Account for padding */
+}
+
+/* Title for the sections */
+.brands h2, .categories h2 {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+    color: black;
+    background-color: white;
+    padding: 10px 0;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+/* Count indicator */
+.count {
+    font-size: 0.6em;
+    color: #777;
+    font-weight: normal;
+}
+
+/* Table container with fixed height to enable scrolling */
+.table-container {
+    max-height: 400px;
+    height: 400px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background-color: white;
+}
+
+/* For the parent containers, set a minimum height */
+.brands, .categories {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 48%;
+    display: flex;
+    flex-direction: column;
+    min-height: 500px;
+}
+
+/* Table styling */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    background-color: white;
+}
+
+    /* Table header */
+    .data-table thead {
+        background-color: #f0f0f0;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+    }
+
+    .data-table th {
+        padding: 12px 15px;
+        text-align: left;
+        font-weight: bold;
+        border-bottom: 2px solid #ddd;
+        color: black;
+        background-color: #f0f0f0;
+    }
+
+    /* Table rows */
+    .data-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #eee;
+        vertical-align: middle;
+        color: black;
+        background-color: white;
+    }
+
+.table-row {
+    background-color: white;
+}
+
+    .table-row:hover {
+        background-color: #f9f9f9;
+    }
+
+/* Brand image styling */
+.brand-icon {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    display: block;
+}
+
+/* Toggle switch styling */
+.switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    color: black;
+}
+
+    .switch input {
+        position: relative;
+        appearance: none;
+        width: 50px;
+        height: 24px;
+        background-color: #ccc;
+        border-radius: 25px;
+        transition: 0.3s;
+        border:none;
+        cursor: pointer;
+    }
+
+        .switch input:checked {
+            background-color: #4CAF50;
+        }
+
+        .switch input:before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            background-color: white;
+            transition: 0.3s;
+        }
+
+        .switch input:checked:before {
+            transform: translateX(26px);
+        }
+
+/* Custom scrollbar styling */
+.table-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+    .table-container::-webkit-scrollbar-thumb:hover {
+        background: #999;
+    }
+
+/* Loading and error states */
+p, .error {
+    text-align: center;
+    padding: 20px;
+    color: black;
+   
+}
+/* Overlay Background */
+.brands-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+/* Overlay Content Container */
+.brands-overlay-content {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    justify-content:center;
+    gap: 0px;
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+}
+.brands-overlay-title{
+    align-self:center;
+    c
+}
+    /* Header */
+    .brands-overlay-content h3 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 20px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    /* Form Labels */
+    .brands-overlay-content label {
+        display: block;
+        margin-bottom: 8px;
+        justify-items:center;
+        font-size: 14px;
+        font-weight: 500;
+        color: #555;
+    }
+
+    /* Form Inputs */
+    .brands-overlay-content input[type="text"] {
+        width: 100%;
+        padding: 10px 12px;
+        margin-bottom: 16px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+        transition: border-color 0.2s;
+    }
+
+        .brands-overlay-content input[type="text"]:focus {
+            border-color: #4a90e2;
+            outline: none;
+        }
+
+    /* File Input */
+    .brands-overlay-content input[type="file"] {
+        width: 100%;
+        font-size: 14px;
+        color: #555;
+        display: none; /* Hide the actual file input */
+    }
+
+/* Upload and Switch Row Container */
+.upload-switch-container {
+    display: flex;
+    align-items: center;
+    gap:10%;
+}
+
+/* Upload Box */
+.brands-upload-box {
+    width: 60px;
+    height: 60px;
+     /* Fixed typo: margn → margin */
+    border: 2px dashed #d1d5db;
+    border-radius: 4px;
+    display: flex;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    position: relative; /* Added to help with absolute positioning if needed */
+}
+
+    .brands-upload-box:hover {
+        border-color: #9ca3af;
+    }
+
+    .brands-upload-box input {
+        display: none;
+    }
+
+    .brands-upload-box span {
+        font-size: 24px;
+        color: #9ca3af;
+        display: flex; /* Ensure the span itself is a flex container */
+        align-items: center; /* Center vertically */
+        justify-content: center; /* Center horizontally */
+        width: 100%; /* Take up full width of parent */
+        height: 100%; /* Take up full height of parent */
+        line-height: 1; /* Reset line height to prevent vertical offset */
+    }
+.brand-preview{
+height:60px;
+width:60px;
+}
+
+.upload-box:hover {
+    border-color: #4a90e2;
+}
+   
+/* Toggle Switch Container */
+.switch {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+    }
+
+.slider {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+    background-color: #ccc;
+    border-radius: 34px;
+    margin-right: 10px;
+    transition: .3s;
+}
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        border-radius: 50%;
+        transition: .3s;
+    }
+
+input:checked + .slider {
+    background-color: #4CAF50;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #4CAF50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(18px);
+}
+
+/* Button Container */
+.brands-button-container {
+    display: flex;
+    align-content:center;
+    justify-content:center;
+    gap:10%;
+    margin-top: 20px;
+}
+
+/* Buttons */
+.brands-overlay-content button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+    .brands-overlay-content button:first-of-type {
+        background-color: #4a90e2;
+        color: white;
+    }
+
+        .brands-overlay-content button:first-of-type:hover {
+            background-color: #3a7bc8;
+        }
+
+    .brands-overlay-content button:last-of-type {
+        background-color: #f5f5f5;
+        color: #555;
+    }
+
+        .brands-overlay-content button:last-of-type:hover {
+            background-color: #e5e5e5;
+        }
+
+/* Responsive styling for smaller screens */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .brands, .categories {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .table-container {
+        max-height: 400px;
+        height: auto;
+    }
+}

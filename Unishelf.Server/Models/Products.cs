@@ -25,13 +25,13 @@ namespace Unishelf.Server.Models
 
         public int? Depth { get; set; }
 
-        public int? PricePerMsq {get; set; }
+        public Double? PricePerMsq {get; set; }
 
-        public int? Price {  get; set; }
+        public Double? Price {  get; set; }
 
         public int? QtyPerBox { get; set; }
 
-        public int? SqmPerBox { get; set; }
+        public Double? SqmPerBox { get; set; }
 
         public int? Quantity { get; set; }
 

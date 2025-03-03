@@ -45,7 +45,7 @@ const Header: React.FC = () => {
                 <nav>
                     <ul className="nav-links">
                         <li><a href="/">Home</a></li>
-                        <li><a href="/StockManager">Stock Manager</a></li>
+                        <li><a href="/Dashboard">Dashboard</a></li>
                         <li><a href="/cart"><AiOutlineShoppingCart size={24} /></a></li>
                         {userName ? (
                             <li className="profile">

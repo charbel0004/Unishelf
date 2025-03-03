@@ -276,7 +276,7 @@ const Login: FC<LoginProps> = () => {
                         {isSignUp ? 'Create Account' : 'Log In'}
                     </button>
                 </form>
-                <p>
+                <p className="link">
                     {isSignUp ? (
                         <>
                             Already have an account?{' '}

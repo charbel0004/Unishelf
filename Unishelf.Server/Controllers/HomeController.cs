@@ -1,38 +1,40 @@
-using Unishelf.Server.Services;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
-using System.Data;
-using System.Threading.Tasks;
-using Unishelf.Server.Data;
-using System.Text.Json;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using System.Security.Cryptography;
+    using Unishelf.Server.Services;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.Data.SqlClient;
+    using Microsoft.EntityFrameworkCore;
+    using System.Data;
+    using System.Threading.Tasks;
+    using Unishelf.Server.Data;
+    using System.Text.Json;
+    using Microsoft.IdentityModel.Tokens;
+    using System.IdentityModel.Tokens.Jwt;
+    using System.Security.Claims;
+    using System.Text;
+    using System.Security.Cryptography;
+using Unishelf.Server.Services.Users;
 
 namespace Unishelf.Server.Controllers
-{
-    [ApiController]
-    [Route("api/[controller]")]
-    public class HomeController : ControllerBase
     {
-        private readonly PasswordHasher _passwordHasher;
-        private readonly ApplicationDbContext _dbContext;
-
-        public HomeController(PasswordHasher passwordHasher, ApplicationDbContext dbContext)
+        [ApiController]
+        [Route("api/[controller]")]
+        public class HomeController : ControllerBase
         {
-            _passwordHasher = passwordHasher;
-            _dbContext = dbContext;
-        }
+            private readonly PasswordHasher _passwordHasher;
+            private readonly ApplicationDbContext _dbContext;
+            private readonly UserService _userService;
 
-        [HttpPost("signup")]
+            public HomeController(PasswordHasher passwordHasher, ApplicationDbContext dbContext, UserService userService)
+            {
+                _passwordHasher = passwordHasher;
+                _dbContext = dbContext;
+                _userService = userService;
+            }
+
+            [HttpPost("signup")]
         public async Task<IActionResult> SignUp([FromBody] JsonElement data)
         {
             try
             {
-                // Extract form data from the JsonElement
                 string firstName = data.GetProperty("firstName").GetString();
                 string lastName = data.GetProperty("lastName").GetString();
                 string username = data.GetProperty("username").GetString();
@@ -40,151 +42,48 @@ namespace Unishelf.Server.Controllers
                 string phoneNumber = data.GetProperty("phoneNumber").GetString();
                 string password = data.GetProperty("password").GetString();
 
-                DateTime lastLogIn = DateTime.Now;
+                bool result = await _userService.SignUp(firstName, lastName, username, email, phoneNumber, password);
 
-                // Hash the password and get it as byte[] using your password hasher
-                byte[] hashedPassword = _passwordHasher.HashPassword(password);
-
-                // Establish a connection to the database using _dbContext
-                using (var connection = new SqlConnection(_dbContext.Database.GetConnectionString()))
+                if (result)
                 {
-                    await connection.OpenAsync(); // Open the connection
-
-                    // Create a command to execute the stored procedure
-                    using (SqlCommand command = new SqlCommand("UN_InsertUser", connection))
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-
-                        // Add parameters to the command
-                        command.Parameters.AddWithValue("@UserName", username);
-                        command.Parameters.AddWithValue("@FirstName", firstName);
-                        command.Parameters.AddWithValue("@LastName", lastName);
-                        command.Parameters.AddWithValue("@PhoneNumber", phoneNumber);
-                        command.Parameters.AddWithValue("@EmailAddress", email);
-                        command.Parameters.Add("@Password", SqlDbType.VarBinary).Value = hashedPassword; // Pass byte[] here
-                        command.Parameters.AddWithValue("@LastLogIn", lastLogIn);
-
-                        try
-                        {
-                            // Execute the stored procedure directly
-                            await command.ExecuteNonQueryAsync();
-                            return Ok(new { message = "User created successfully!" });
-                        }
-                        catch (SqlException sqlEx)
-                        {
-                            // Specific SQL exception handling
-                            return StatusCode(500, new { message = "User creation failed due to a database error.", details = sqlEx.Message });
-                        }
-                        catch (Exception ex)
-                        {
-                            // General exception handling
-                            return StatusCode(500, new { message = "User creation failed.", details = ex.Message });
-                        }
-                    }
+                    return Ok(new { message = "User created successfully!" });
                 }
+
+                return BadRequest(new { message = "User creation failed." });
             }
             catch (Exception ex)
             {
-                // Handle unexpected errors and return a response
                 return StatusCode(500, new { message = "An error occurred", details = ex.Message });
             }
-        }
+        
+            }
 
 
 
-        [HttpPost("login")]
+            [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] JsonElement data)
         {
             try
             {
-                // Parse request data
-                string usernameOrEmail = data.GetProperty("usernameOrEmail").GetString();
-                string password = data.GetProperty("password").GetString();
-
-                using (var connection = new SqlConnection(_dbContext.Database.GetConnectionString()))
+                // Validate request data
+                if (!data.TryGetProperty("usernameOrEmail", out JsonElement usernameOrEmailElement) ||
+                    !data.TryGetProperty("password", out JsonElement passwordElement))
                 {
-                    await connection.OpenAsync();
-
-                    using (SqlCommand command = new SqlCommand("UN_ValidateUser", connection))
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@UserNameOrEmail", usernameOrEmail);
-
-                        using (SqlDataReader reader = await command.ExecuteReaderAsync())
-                        {
-                            if (await reader.ReadAsync())
-                            {
-                                // Map database columns
-                                byte[] storedPassword = reader["Password"] as byte[]; // VARBINARY
-                                string name = reader["Name"].ToString();
-                                string email = reader["EmailAddress"].ToString();
-                                string phoneNumber = reader["PhoneNumber"].ToString();
-                                string userName = reader["UserName"].ToString();
-                                int id = Convert.ToInt32(reader["UserID"]);
-                                bool isCustomer = Convert.ToBoolean(reader["IsCustomer"]);
-                                bool isEmployee = Convert.ToBoolean(reader["IsEmployee"]);
-                                bool isManager = Convert.ToBoolean(reader["IsManager"]);
-
-                                // Verify password
-                                if (!_passwordHasher.VerifyPassword(password, storedPassword))
-                                {
-                                    return Unauthorized(new { message = "Invalid password." });
-                                }
-
-                                // Close the reader before executing another command
-                                reader.Close();
-
-                                // Update last login
-                                using (var updateCommand = new SqlCommand("UN_UpdateLogIN", connection))
-                                {
-                                    updateCommand.CommandType = CommandType.StoredProcedure;
-                                    updateCommand.Parameters.AddWithValue("@LastLogIn", DateTime.Now);
-                                    updateCommand.Parameters.AddWithValue("@UserNameOrEmail", usernameOrEmail);
-                                    await updateCommand.ExecuteNonQueryAsync();
-                                }
-
-                                // Generate JWT token
-                                var keyBytes = RandomNumberGenerator.GetBytes(32); // Generate a secure 256-bit (32-byte) key
-                                var key = new SymmetricSecurityKey(keyBytes);
-
-                                var claims = new[]
-                                {
-                                    new Claim("UserID", id.ToString()),
-                                    new Claim(ClaimTypes.Name, userName),
-                                    new Claim(ClaimTypes.GivenName, name),
-                                    new Claim(ClaimTypes.Email, email),
-                                    new Claim("PhoneNumber", phoneNumber),
-                                    new Claim("Role_Customer", isCustomer.ToString()),
-                                    new Claim("Role_Employee", isEmployee.ToString()),
-                                    new Claim("Role_Manager", isManager.ToString())
-                                };
-
-                                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-                                var token = new JwtSecurityToken(
-                                    issuer: "YourIssuer",
-                                    audience: "YourAudience",
-                                    claims: claims,
-                                    expires: DateTime.Now.AddHours(1),
-                                    signingCredentials: creds
-                                );
-
-                                return Ok(new
-                                {
-                                    message = "Login successful!",
-                                    token = new JwtSecurityTokenHandler().WriteToken(token)
-                                });
-                            }
-                            else
-                            {
-                                return Unauthorized(new { message = "Invalid username or email." });
-                            }
-                        }
-                    }
+                    return BadRequest(new { message = "Username/Email and password are required." });
                 }
-            }
-            catch (SqlException sqlEx)
-            {
-                return StatusCode(500, new { message = "Database error occurred.", details = sqlEx.Message });
+
+                string usernameOrEmail = usernameOrEmailElement.GetString();
+                string password = passwordElement.GetString();
+
+                // Call the UserService to validate user and generate a JWT token
+                var (success, token, message) = await _userService.Login(usernameOrEmail, password);
+
+                if (!success)
+                {
+                    return Unauthorized(new { message });
+                }
+
+                return Ok(new { token, message });
             }
             catch (Exception ex)
             {
@@ -192,10 +91,21 @@ namespace Unishelf.Server.Controllers
             }
         }
 
+
         [HttpGet("UN_GetUsernames")]
-        public IActionResult GetActiveUserNames()
-        {
-            try
+            public async Task<IActionResult> GetActiveUserNames()
+            {
+                try
+                {
+                    List<string> userNames = await _userService.GetUserNames();
+                    return Ok(userNames);
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new { message = "Unexpected error", details = ex.Message });
+                }
+
+            /*try
             {
                 using (var connection = new SqlConnection(_dbContext.Database.GetConnectionString()))
                 {
@@ -226,8 +136,8 @@ namespace Unishelf.Server.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Unexpected error", details = ex.Message });
-            }
+            }*/
         }
 
+        }
     }
-}

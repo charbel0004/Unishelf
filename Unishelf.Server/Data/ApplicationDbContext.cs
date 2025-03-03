@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Unishelf.Models;
 using Unishelf.Server.Models;
 
 namespace Unishelf.Server.Data
@@ -11,6 +12,7 @@ namespace Unishelf.Server.Data
         }
 
         // DbSets for each of your models
+        public DbSet<User> User { get; set; }
         public DbSet<Cart> Carts { get; set; }
         public DbSet<Brands> Brands { get; set; }
         public DbSet<Categories> Categories { get; set; }

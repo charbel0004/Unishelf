@@ -11,6 +11,9 @@
     align-items: center;
     padding-left: 10%;
 }
+#username{
+    color:white;
+}
 
 .row {
     display: flex;
@@ -92,11 +95,27 @@ input {
     transition: border-color 0.3s ease;
 }
 
-    input:focus {
-        outline: none;
-        border-color: #0066cc;
-        box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
-    }
+#email{
+    color:white;
+}
+#password {
+    color: white;
+}
+#confirmPassword{
+color: white;
+}
+#firstName {
+    color: white;
+}#lastName {
+    color: white;
+}
+
+
+input:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
 
     input::placeholder {
         color: #666666;
@@ -119,10 +138,11 @@ button {
         background-color: #0052a3;
     }
 
-p {
+.link {
     text-align: center;
     margin-top: 1.5rem;
     color: #cccccc;
+    
 }
 
 a {
@@ -138,11 +158,15 @@ a {
 
     .PhoneInput{
         flex-direction:row;
+        color:white;
     }
     .PhoneInputCountry{
         flex-direction:row;
     }
-
+.PhoneInputInput {
+    flex-direction: row;
+    color: white;
+}
 /* Rest of the original styles remain the same until media queries */
 
 @media (min-width: 768px) {
@@ -194,7 +218,7 @@ a {
         margin-top: 0.8rem;
     }
 
-    p {
+    .link {
         margin-top: 1rem;
         font-size: 0.9rem;
     }

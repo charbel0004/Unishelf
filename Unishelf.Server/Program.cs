@@ -5,9 +5,12 @@ using Unishelf.Server.Data;
 using Unishelf.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Unishelf.Server.Services.Users;
+using Unishelf.Server.Services.Products;
+using Unishelf.Server.Services.Dashboard;
 
 var builder = WebApplication.CreateBuilder(args);
-
+var configuration = builder.Configuration;
 // Add services to the container.
 builder.Services.AddControllers();
 
@@ -19,7 +22,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Register Data Protection
+// Register Data Protection`
 builder.Services.AddDataProtection(); // Add this to register IDataProtectionProvider
 
 // Register your custom PasswordHasher as a scoped service
@@ -27,6 +30,10 @@ builder.Services.AddScoped<PasswordHasher>(); // Register _passwordHasher (or Pa
 
 // Register EncryptionHelper
 builder.Services.AddSingleton<EncryptionHelper>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<ProductsServices>();
+builder.Services.AddScoped<DashboardServices>();
+
 
 
 // Add services to the container.
@@ -39,8 +46,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes("YourSecretKeyHere")),
-            ClockSkew = TimeSpan.Zero // Optional: prevent delay in token expiry
+            ValidIssuer = configuration["Jwt:Issuer"],  // Read from appsettings.json
+            ValidAudience = configuration["Jwt:Audience"],  // Read from appsettings.json
+            IssuerSigningKey = new SymmetricSecurityKey(
+                System.Text.Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
+
+            ClockSkew = TimeSpan.Zero // Prevents delay in token expiry
         };
     });
 builder.Services.AddAuthorization();
