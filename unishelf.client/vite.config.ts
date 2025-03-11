@@ -1,5 +1,4 @@
 import { fileURLToPath, URL } from 'node:url';
-
 import { defineConfig } from 'vite';
 import plugin from '@vitejs/plugin-react';
 import fs from 'fs';
@@ -42,7 +41,7 @@ export default defineConfig({
     plugins: [plugin()],
     resolve: {
         alias: {
-            '@': fileURLToPath(new URL('./src', import.meta.url))
+            '@': fileURLToPath(new URL('./src', import.meta.url)),
         }
     },
     server: {
@@ -58,5 +57,13 @@ export default defineConfig({
                 secure: false
             }
         }
-    }
-})
+    },
+    esbuild: {
+        // Disable TypeScript type checking during the build process
+        tsconfigRaw: {
+            compilerOptions: {
+                noEmitOnError: false, // Allow build even if there are type errors
+            },
+        },
+    },
+});

@@ -1,14 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './css/BrandsandCategories.css';
 import config from './config';
 
+interface Brand {
+    brandID: string;
+    brandName: string;
+    brandEnabled: boolean;
+    brandImageID: string;
+    brandImage: string | null;
+    isActive: boolean;
+}
+
+interface Category {
+    categoryID: string;
+    categoryName: string;
+    categoryEnabled: boolean; // Corrected property name
+    isActive: boolean;
+}
+
 const BrandsandCategories: React.FC = () => {
-    const [brands, setBrands] = useState<any[]>([]);
-    const [categories, setCategories] = useState<any[]>([]);
+    const [brands, setBrands] = useState<Brand[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [overlayVisible, setOverlayVisible] = useState<boolean>(false);
-    const [categoryOverlayVisible, setCategoryOverlayVisible] = useState<boolean>(false); // New state for category overlay
+    const [categoryOverlayVisible, setCategoryOverlayVisible] = useState<boolean>(false);
     const [newBrand, setNewBrand] = useState({
         name: "",
         image: null,
@@ -22,12 +38,12 @@ const BrandsandCategories: React.FC = () => {
         isActive: true
     });
 
-    const openOverlay = (brand = null) => {
+    const openOverlay = (brand: Brand | null = null) => {
         if (brand) {
             setNewBrand({
                 name: brand.brandName,
                 image: brand.brandImage ? `data:image/png;base64,${brand.brandImage}` : null,
-                isActive: brand.isActive,
+                isActive: brand.brandEnabled,
                 brandImageId: brand.brandImageID,
                 brandId: brand.brandID
             });
@@ -43,57 +59,50 @@ const BrandsandCategories: React.FC = () => {
         setOverlayVisible(true);
     };
 
-    const openCategoryOverlay = (category = null) => {
+
+    const openCategoryOverlay = (category: any | null = null) => { // Type any due to encryptedCategoryID.
+        console.log(category);
         if (category) {
             setNewCategory({
                 name: category.categoryName,
-                categoryId: category.categoryID,
-                isActive: category.isActive
+                categoryId: category.encryptedCategoryId, // Corrected to use encryptedCategoryId
+                isActive: category.categoryEnabled,
             });
         } else {
             setNewCategory({
                 name: "",
                 categoryId: null,
-                isActive: true
+                isActive: true,
             });
         }
         setCategoryOverlayVisible(true);
     };
 
+
     const closeOverlay = () => {
-        setNewBrand({
-            name: "",
-            image: null,
-            isActive: true,
-            brandId: null,
-            brandImageId: null
-        });
+        setNewBrand({ name: "", image: null, isActive: true, brandId: null, brandImageId: null });
         setOverlayVisible(false);
     };
 
     const closeCategoryOverlay = () => {
-        setNewCategory({
-            name: "",
-            categoryId: null,
-            isActive: true
-        });
+        setNewCategory({ name: "", categoryId: null, isActive: true });
         setCategoryOverlayVisible(false);
     };
 
-    const handleBrandInputChange = (e) => {
+    const handleBrandInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setNewBrand({ ...newBrand, name: e.target.value });
     };
 
-    const handleCategoryInputChange = (e) => {
+    const handleCategoryInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setNewCategory({ ...newCategory, name: e.target.value });
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setNewBrand({ ...newBrand, image: reader.result }); // Update image correctly
+                setNewBrand({ ...newBrand, image: reader.result });
             };
             reader.readAsDataURL(file);
         }
@@ -117,10 +126,7 @@ const BrandsandCategories: React.FC = () => {
                 base64Image: newBrand.image ? newBrand.image.split(',')[1] : null
             };
 
-            console.log("Brand Data Payload:", brandData);
-
-            let url = `${config.API_URL}/api/Dashboard/AddOrUpdateBrand`;
-
+            const url = `${config.API_URL}/api/Dashboard/AddOrUpdateBrand`;
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -129,21 +135,10 @@ const BrandsandCategories: React.FC = () => {
 
             if (!response.ok) throw new Error('Failed to save brand');
 
-            const updatedBrands = await fetch(`${config.API_URL}/api/Dashboard/GetBrands`);
-            const updatedCategories = await fetch(`${config.API_URL}/api/Dashboard/GetCategories`);
-
-            if (!updatedBrands.ok || !updatedCategories.ok) {
-                throw new Error('Failed to load updated data');
-            }
-
-            const brandsData = await updatedBrands.json();
-            const categoriesData = await updatedCategories.json();
-
-            setBrands(brandsData);
-            setCategories(categoriesData);
+            fetchData(`${config.API_URL}/api/Dashboard/GetBrands`, setBrands, 'Failed to load brands.');
 
             closeOverlay();
-        } catch (error) {
+        } catch (error: any) {
             setError(error.message);
         }
     };
@@ -151,53 +146,116 @@ const BrandsandCategories: React.FC = () => {
     const handleCategorySubmit = async () => {
         try {
             const categoryData = {
-                categoryId: newCategory.categoryId,
+                categoryId: newCategory.categoryId, // Ensure this is set correctly
                 categoryName: newCategory.name,
-                isActive: newCategory.isActive
+                isActive: newCategory.isActive,
             };
 
-            console.log("Category data being sent:", categoryData); // Add this line to inspect the payload
-
-            let url = `${config.API_URL}/api/Dashboard/AddOrUpdateCategory`;
-
+            const url = `${config.API_URL}/api/Dashboard/AddOrUpdateCategory`;
             const response = await fetch(url, {
-                method: 'POST',
+                method: 'POST', // Confirm if API requires 'PUT' for updates
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(categoryData)
+                body: JSON.stringify(categoryData),
             });
 
             if (!response.ok) throw new Error('Failed to save category');
 
-            const updatedCategories = await fetch(`${config.API_URL}/api/Dashboard/GetCategories`);
-            if (!updatedCategories.ok) throw new Error('Failed to load updated categories');
-
-            const categoriesData = await updatedCategories.json();
-            setCategories(categoriesData);
+            // Refresh categories list
+            fetchData(`${config.API_URL}/api/Dashboard/GetCategories`, setCategories, 'Failed to load categories.', true);
 
             closeCategoryOverlay();
-        } catch (error) {
+        } catch (error: any) {
             setError(error.message);
         }
     };
 
 
-    useEffect(() => {
-        const fetchData = async (url: string, setter: React.Dispatch<React.SetStateAction<any[]>>, errorMsg: string) => {
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(errorMsg);
-                const data = await response.json();
-                setter(data);
-            } catch (err) {
-                setError(errorMsg);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const handleBrandToggle = async (brand: Brand) => {
+        try {
+            const url = `${config.API_URL}/api/Dashboard/AddOrUpdateBrand`;
+            const updatedBrand = {
+                ...brand,
+                brandEnabled: !brand.brandEnabled,
+                isActive: !brand.brandEnabled,
+                brandId: brand.brandID,
+                brandName: brand.brandName,
+                brandImageId: brand.brandImageID,
+                base64Image: brand.brandImage ? brand.brandImage : null
+            };
 
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedBrand)
+            });
+
+            if (!response.ok) throw new Error('Failed to update brand status');
+
+            // Update the brands state directly
+            setBrands((prevBrands) =>
+                prevBrands.map((b) =>
+                    b.brandID === brand.brandID ? { ...b, isActive: !brand.brandEnabled, brandEnabled: !brand.brandEnabled } : b
+                )
+            );
+        } catch (error: any) {
+            setError(error.message);
+        }
+    };
+
+
+    const handleCategoryToggle = async (category: Category) => {
+        try {
+            const url = `${config.API_URL}/api/Dashboard/update-category-status`;
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    CategoryId: category.encryptedCategoryId,
+                    IsEnabled: !category.categoryEnabled,
+                }),
+            });
+
+            if (!response.ok) throw new Error('Failed to update category status');
+
+            fetchData(`${config.API_URL}/api/Dashboard/GetCategories`, setCategories, 'Failed to load categories.', true);
+        } catch (error: any) {
+            setError(error.message);
+        }
+    };
+
+
+
+    const fetchData = useCallback(async (url: string, setter: React.Dispatch<React.SetStateAction<any[]>>, errorMsg: string, isCategory = false) => {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(errorMsg);
+            const data = await response.json();
+
+            const mappedData = data.map((item: any) => {
+                let isActive;
+                if (isCategory) {
+                    isActive = item.categoryEnabled;
+                } else {
+                    isActive = item.brandEnabled !== undefined ? item.brandEnabled : item.isEnabled;
+                }
+                return {
+                    ...item,
+                    categoryId: item.encryptedCategoryId, // Add this line
+                    isActive: isActive,
+                };
+            });
+            setter(mappedData);
+        } catch (err: any) {
+            setError(errorMsg);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
         fetchData(`${config.API_URL}/api/Dashboard/GetBrands`, setBrands, 'Failed to load brands.');
         fetchData(`${config.API_URL}/api/Dashboard/GetCategories`, setCategories, 'Failed to load categories.');
-    }, []);
+    }, [fetchData]);
 
     if (loading) return <p>Loading brands and categories...</p>;
     if (error) return <p className="error">{error}</p>;
@@ -217,17 +275,22 @@ const BrandsandCategories: React.FC = () => {
                         <tbody>
                             {brands.map((brand) => (
                                 <tr key={brand.brandID}>
-                                    <td onClick={() => openOverlay(brand)}><img src={brand.brandImage ? `data:image/png;base64,${brand.brandImage}` : "/placeholder.png"} alt={brand.brandName} className="brand-icon" /></td>
+                                    <td onClick={() => openOverlay(brand)}>
+                                        <img src={brand.brandImage ? `data:image/png;base64,${brand.brandImage}` : "/placeholder.png"}
+                                            alt={brand.brandName}
+                                            className="brand-icon" />
+                                    </td>
                                     <td onClick={() => openOverlay(brand)}>{brand.brandName}</td>
                                     <td>
                                         <label className="switch">
-                                            <input type="checkbox" checked={brand.isActive} onChange={() => { }} />
+                                            <input type="checkbox" checked={brand.isActive} onChange={() => handleBrandToggle(brand)} />
                                             <span className="slider"></span>{brand.isActive ? 'Active' : 'Inactive'}
                                         </label>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
+
                     </table>
                 </div>
             </div>
@@ -245,11 +308,15 @@ const BrandsandCategories: React.FC = () => {
                         <tbody>
                             {categories.map((category) => (
                                 <tr key={category.categoryID}>
-                                    <td>{category.categoryName}</td>
+                                    <td onClick={() => openCategoryOverlay(category)} >{category.categoryName}</td>
                                     <td>
                                         <label className="switch">
-                                            <input type="checkbox" checked={category.isActive} onChange={() => { }} />
-                                            <span className="slider"></span>{category.isActive ? 'Active' : 'Inactive'}
+                                            <input
+                                                type="checkbox"
+                                                checked={category.categoryEnabled}
+                                                onChange={() => handleCategoryToggle(category)} 
+                                            />
+                                            <span className="slider"></span>{category.categoryEnabled ? 'Active' : 'Inactive'} 
                                         </label>
                                     </td>
                                 </tr>
@@ -310,7 +377,7 @@ const BrandsandCategories: React.FC = () => {
                     </div>
                 </div>
             )}
-        </div>
+        </div>  
     );
 };
 

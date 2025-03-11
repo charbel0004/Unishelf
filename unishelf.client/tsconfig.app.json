@@ -1,26 +1,24 @@
 {
   "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "isolatedModules": true,
-    "moduleDetection": "force",
-    "noEmit": true,
-    "jsx": "react-jsx",
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo", // Store build info here for incremental builds
+    "target": "ES2023", // Targets ES2020 for compatibility
+    "useDefineForClassFields": true, // Enabling class fields declaration to match ES2022
+    "lib": [ "ES2023", "DOM", "DOM.Iterable" ], // Includes ES and DOM libraries
+    "module": "ESNext", // Use the latest ES module system
+    "skipLibCheck": true, // Skip type checking of libraries to improve build time
+    "moduleResolution": "bundler", // Use bundler module resolution
+    "allowImportingTsExtensions": true, // Allows importing .ts/.tsx extensions
+    "isolatedModules": true, // Ensures each file is treated as an isolated module for better compatibility with tools like Babel
+    "moduleDetection": "force", // Forces module detection to be strict
+    "noEmit": true, // Do not generate output files (used with bundler tools like Vite)
+    "jsx": "react-jsx", // Use the new JSX transform (for React 17+)
 
     /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "strict": true, // Enable strict mode for type checking
+    "noUnusedLocals": true, // Raise errors for unused locals
+    "noUnusedParameters": true, // Raise errors for unused parameters
+    "noFallthroughCasesInSwitch": true, // Prevent fallthrough in switch statements
+    "noUncheckedSideEffectImports": true // Prevent imports that might cause side effects
   },
-  "include": ["src"]
+  "include": [ "src" ] // Includes the entire `src` folder for compilation
 }

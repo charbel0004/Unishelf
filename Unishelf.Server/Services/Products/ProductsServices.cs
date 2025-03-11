@@ -30,7 +30,8 @@ namespace Unishelf.Server.Services.Products
                     CategoryID = _encryptionHelper.Encrypt(c.CategoryID.ToString()),
                     CategoryName = c.CategoryName,
                     Brands = _dbContext.Brands
-                        .Where(b => b.BrandEnabled)
+                        .Where(b => b.BrandEnabled && _dbContext.Products
+                            .Any(p => p.BrandID == b.BrandID && p.CategoryID == c.CategoryID))
                         .Select(b => new
                         {
                             BrandID = _encryptionHelper.Encrypt(b.BrandID.ToString()),

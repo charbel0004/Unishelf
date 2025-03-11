@@ -186,50 +186,81 @@ namespace Unishelf.Server.Services.Dashboard
 
             Categories category;
 
-            if (string.IsNullOrEmpty(categoryId))
-            {
-                // Create new category
-                category = new Categories
-                {
-                    CategoryName = categoryName,
-                    CategoryEnabled = isActive
-                };
-
-                _dbContext.Categories.Add(category);
-            }
-            else
-            {
-                // Decrypt the categoryId if it's provided
-                int decryptedId = int.Parse(_encryptionHelper.Decrypt(categoryId));
-
-                // Update existing category using decryptedId
-                category = await _dbContext.Categories.FindAsync(decryptedId);
-                if (category == null)
-                    throw new KeyNotFoundException("Category not found.");
-
-                category.CategoryName = categoryName;
-                category.CategoryEnabled = isActive;
-
-                _dbContext.Categories.Update(category);
-            }
-
             try
             {
+                if (string.IsNullOrEmpty(categoryId))
+                {
+                    category = new Categories
+                    {
+                        CategoryName = categoryName,
+                        CategoryEnabled = isActive
+                    };
+
+                    _dbContext.Categories.Add(category);
+                }
+                else
+                {
+                    if (!int.TryParse(_encryptionHelper.Decrypt(categoryId), out int decryptedId))
+                        throw new ArgumentException("Invalid category ID.");
+
+                    category = await _dbContext.Categories.FindAsync(decryptedId);
+                    if (category == null)
+                        throw new KeyNotFoundException("Category not found.");
+
+                    category.CategoryName = categoryName;
+                    category.CategoryEnabled = isActive;
+
+                    _dbContext.Categories.Update(category);
+                }
+
                 await _dbContext.SaveChangesAsync();
+                return category.CategoryID;
             }
             catch (Exception ex)
             {
-                // Add error handling for saving changes to the database
-                throw new Exception("Error saving the category to the database: " + ex.Message);
+                throw new Exception($"Error saving category: {ex.Message}");
             }
-
-            return category.CategoryID; // Return the category ID
         }
 
 
 
+        public async Task<bool> UpdateCategoryEnabled(string categoryId, bool isEnabled)
+        {
+            int decryptedID = int.Parse(_encryptionHelper.Decrypt(categoryId));
+            var category = await _dbContext.Categories
+                .FirstOrDefaultAsync(c => c.CategoryID == decryptedID);
 
+            if (category == null)
+            {
+                return false; // Category not found
+            }
 
+            category.CategoryEnabled = isEnabled;
+
+            // Save changes to the database
+            await _dbContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> UpdateBrandEnabled(string brandId, bool isEnabled)
+        {
+            int decryptedID = int.Parse(_encryptionHelper.Decrypt(brandId));
+            var brand = await _dbContext.Brands
+                .FirstOrDefaultAsync(b => b.BrandID == decryptedID);
+
+            if (brand == null)
+            {
+                return false; // Category not found
+            }
+
+            brand.BrandEnabled = isEnabled;
+
+            // Save changes to the database
+            await _dbContext.SaveChangesAsync();
+
+            return true;
+        }
 
 
     }
