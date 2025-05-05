@@ -1,0 +1,148 @@
+/* Page background */
+body {
+    background-color: white;
+    height: 100vh; /* Use viewport height to fill the screen */
+    width: 100%;
+    font-family: Arial, sans-serif;
+    overflow-x: hidden;
+    margin: 0; /* Reset default body margin */
+}
+
+/* Main container */
+.p-4 {
+    padding: 2rem;
+    max-width: 100%;
+    margin:  auto; /* Adjust top margin, auto for horizontal centering, 0 bottom */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.container-users {
+    background-color: white;
+    height: 100vh; /* Ensure it's at least the height of the viewport */
+}
+
+/* Table base */
+.usersTable {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    margin: auto;
+}
+
+/* Table headers */
+.userTthead tr {
+    background-color: #f0f2f5;
+    text-align: left;
+    font-weight: 600;
+}
+
+th {
+    padding: 16px;
+    text-align: center;
+    border-bottom: 1px solid #e5e7eb;
+    color: #374151;
+    font-size: 1.05rem;
+}
+
+.title {
+    color: black;
+}
+
+td {
+    padding: 14px;
+    text-align: center;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 1rem;
+    color: black;
+}
+
+/* Table rows */
+tbody tr:nth-child(even) {
+    background-color: #f9fafb;
+}
+
+tbody tr:hover {
+    background-color: #f1f5f9;
+    transition: background-color 0.2s ease;
+}
+
+/* Responsive toggle switch */
+.usersswitch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+    .usersswitch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+.userslider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 26px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.search-bar{
+    margin-bottom:1%;
+}
+    .userslider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    }
+
+input:checked + .userslider {
+    background-color: #4caf50;
+}
+
+    input:checked + .userslider:before {
+        transform: translateX(24px);
+    }
+
+
+
+/* Scroll overflow for small screens */
+@media screen and (max-width: 992px) {
+    body,
+    html {
+        display: block;
+        height: auto;
+    }
+
+    .p-4 {
+        margin: auto;
+    }
+
+    .usersTable {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
+
+/* Improved visual separation for medium screens */
+@media screen and (min-width: 768px) and (max-width: 1200px) {
+    .p-4 {
+        max-width: 90%;
+    }
+}

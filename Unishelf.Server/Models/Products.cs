@@ -29,6 +29,8 @@ namespace Unishelf.Server.Models
 
         public Double? Price {  get; set; }
 
+        public string Currency { get; set; }
+
         public int? QtyPerBox { get; set; }
 
         public Double? SqmPerBox { get; set; }

@@ -7,6 +7,9 @@ import LogIn from "./LogIn";
 import Dashboard from './Dashboard';
 import Products from './Products';
 import BrandsandCategories from './BrandsandCategories';
+import UserManagement from './UserManagement';
+import AllBrands from './AllBrands';
+import AllProducts from './AllProducts';
 
 const App: React.FC = () => {
     const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
@@ -38,6 +41,9 @@ const App: React.FC = () => {
                 <Route path="/Dashboard" element={<Dashboard />} />
                 <Route path="/Products" element={<Products />} />
                 <Route path="/BrandsandCategories" element={<BrandsandCategories />} />
+                <Route path="/UserManagement" element={<UserManagement />} />
+                <Route path="/AllBrands/:categoryID" element={<AllBrands />} />
+                <Route path="/AllProducts/:brandsID" element={<AllProducts />} />
             </Routes>
         </div>
     );

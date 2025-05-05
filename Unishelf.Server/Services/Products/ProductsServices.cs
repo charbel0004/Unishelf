@@ -9,7 +9,7 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace Unishelf.Server.Services.Products
 {
-    public class ProductsServices
+    public class ProductsServices : IProductsService
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly EncryptionHelper _encryptionHelper;
@@ -48,6 +48,44 @@ namespace Unishelf.Server.Services.Products
 
             return categories.Cast<object>().ToList();
         }
+
+
+        public async Task<object> GetBrandsByCategory(string categoryID)
+        {
+            int categoryGuid = int.Parse(_encryptionHelper.Decrypt(categoryID)); // Decrypt the categoryID
+
+            var categoryWithBrands = await _dbContext.Categories
+                .Where(c => c.CategoryID == categoryGuid && c.CategoryEnabled)
+                .Select(c => new
+                {
+                    CategoryID = _encryptionHelper.Encrypt(c.CategoryID.ToString()),
+                    CategoryName = c.CategoryName,
+                    Brands = _dbContext.Brands
+                        .Where(b => b.BrandEnabled && _dbContext.Products
+                            .Any(p => p.BrandID == b.BrandID && p.CategoryID == c.CategoryID))
+                        .Select(b => new
+                        {
+                            BrandID = _encryptionHelper.Encrypt(b.BrandID.ToString()),
+                            BrandName = b.BrandName,
+                            BrandImageBase64 = _dbContext.BrandImages
+                                .Where(img => img.BrandID == b.BrandID)
+                                .OrderByDescending(img => img.BrandImagesID)
+                                .Select(img => img.BrandImage != null ? Convert.ToBase64String(img.BrandImage) : null)
+                                .FirstOrDefault()
+                        })
+                        .ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            // Check if the category exists
+            if (categoryWithBrands == null)
+            {
+                return new { categoryName = "", brands = new List<object>() }; // Return an object with empty values if no category is found
+            }
+
+            return new { categoryName = categoryWithBrands.CategoryName, brands = categoryWithBrands.Brands };
+        }
+
 
 
         public async Task<List<object>> GetProductsByBrandAndCategory(string encryptedBrandId, string encryptedCategoryId)
@@ -89,6 +127,7 @@ namespace Unishelf.Server.Services.Products
                     Description = p.Description ?? "No description available",
                     PricePerMsq = p.PricePerMsq.HasValue ? (double)p.PricePerMsq.Value : 0.0, // Handling nullable double
                     Price = p.Price.HasValue ? (double)p.Price.Value : 0, // Handling nullable int
+                    Currency = p.Currency ?? "",
                     QtyPerBox = p.QtyPerBox.HasValue ? p.QtyPerBox.Value : 0, // Handling nullable int
                     Height = p.Height.HasValue ? p.Height.Value : 0, // Handling nullable int
                     Width = p.Width.HasValue ? p.Width.Value : 0, // Handling nullable int
@@ -115,8 +154,7 @@ namespace Unishelf.Server.Services.Products
             return product;
         }
 
-
-        public async Task<Images> AddImage(string encryptedProductId, string base64Image)
+        public async Task<string> AddImage(string encryptedProductId, string base64Image)
         {
             if (string.IsNullOrEmpty(encryptedProductId) || string.IsNullOrEmpty(base64Image))
             {
@@ -137,7 +175,11 @@ namespace Unishelf.Server.Services.Products
 
                 _dbContext.Images.Add(image);
                 await _dbContext.SaveChangesAsync();
-                return image;
+
+                // After saving, ImageID is generated
+                string encryptedImageId = _encryptionHelper.Encrypt(image.ImageID.ToString());
+
+                return encryptedImageId;
             }
             catch (FormatException)
             {
@@ -148,6 +190,7 @@ namespace Unishelf.Server.Services.Products
                 throw new Exception($"Internal error: {ex.Message}");
             }
         }
+
 
 
         public async Task<Images> DeleteImage(string encryptedImageId)
@@ -219,6 +262,7 @@ namespace Unishelf.Server.Services.Products
                 int? sqmPerBox = TryParseInt("sqmPerBox");
                 int? qtyPerBox = TryParseInt("qtyPerBox");
                 int? quantity = TryParseInt("quantity");
+                
 
                 bool available = data.TryGetProperty("available", out var availableProp) && availableProp.ValueKind == JsonValueKind.True;
 
@@ -236,6 +280,11 @@ namespace Unishelf.Server.Services.Products
                 string productName = data.TryGetProperty("productName", out var nameProp) && nameProp.ValueKind == JsonValueKind.String
                     ? nameProp.GetString()
                     : null;
+
+                string currency = data.TryGetProperty("currency", out var currencyProp) && currencyProp.ValueKind == JsonValueKind.String
+                    ? currencyProp.GetString()
+                    : null;
+
 
                 // Debugging logs
                 Console.WriteLine($"Product ID: {productID}, Name: {productName}, Price: {price}");
@@ -256,6 +305,7 @@ namespace Unishelf.Server.Services.Products
                         Depth = depth,
                         PricePerMsq = pricePerMsq,
                         Price = price,
+                        Currency= currency,
                         QtyPerBox = qtyPerBox,
                         SqmPerBox = sqmPerBox,
                         Quantity = quantity,
@@ -289,6 +339,7 @@ namespace Unishelf.Server.Services.Products
                     product.Depth = depth ?? product.Depth;
                     product.PricePerMsq = pricePerMsq ?? product.PricePerMsq;
                     product.Price = price ?? product.Price;
+                    product.Currency = currency ?? product.Currency;
                     product.QtyPerBox = qtyPerBox ?? product.QtyPerBox;
                     product.SqmPerBox = sqmPerBox ?? product.SqmPerBox;
                     product.Quantity = quantity ?? product.Quantity;
@@ -380,6 +431,8 @@ namespace Unishelf.Server.Services.Products
                 throw new Exception($"Internal error: {ex.Message}");
             }
         }
+
+
 
     }
 }

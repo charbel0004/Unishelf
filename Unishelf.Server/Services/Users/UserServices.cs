@@ -14,19 +14,22 @@ namespace Unishelf.Server.Services.Users
     public class UserService : IUserService
     {
         private readonly ApplicationDbContext _dbContext;
+        private readonly EncryptionHelper _encryptionHelper;
         private readonly PasswordHasher _passwordHasher;
         private readonly IConfiguration _configuration;
 
-       
-            
-        
 
 
-        public UserService(ApplicationDbContext dbContext, PasswordHasher passwordHasher, IConfiguration configuration)
+
+
+
+
+        public UserService(ApplicationDbContext dbContext, PasswordHasher passwordHasher, IConfiguration configuration, EncryptionHelper encryptionHelper)
         {
             _dbContext = dbContext;
             _passwordHasher = passwordHasher;
             _configuration = configuration;
+            _encryptionHelper = encryptionHelper;
         }
 
         public async Task<bool> SignUp(string firstName, string lastName, string username, string email, string phoneNumber, string password)
@@ -51,7 +54,7 @@ namespace Unishelf.Server.Services.Users
         public async Task<(bool success, string token, string message)> Login(string usernameOrEmail, string password)
         {
             var user = await _dbContext.User
-                .Where(u => u.UserName == usernameOrEmail || u.EmailAddress == usernameOrEmail)
+                .Where(u => (u.UserName == usernameOrEmail || u.EmailAddress == usernameOrEmail) && u.Active == true) // Added check for Active == true
                 .Select(u => new
                 {
                     u.UserID,
@@ -68,7 +71,7 @@ namespace Unishelf.Server.Services.Users
 
             if (user == null)
             {
-                return (false, null, "Invalid username or email.");
+                return (false, null, "Invalid username or email or account is inactive."); // Modified message to reflect inactive account
             }
 
             // Verify password (assuming stored as a byte array)
@@ -79,8 +82,11 @@ namespace Unishelf.Server.Services.Users
 
             // Update last login timestamp
             var dbUser = await _dbContext.User.FindAsync(user.UserID);
-            dbUser.LastLogIn = DateTime.Now;
-            await _dbContext.SaveChangesAsync();
+            if (dbUser != null) // Ensure user still exists in the context
+            {
+                dbUser.LastLogIn = DateTime.Now;
+                await _dbContext.SaveChangesAsync();
+            }
 
             // Generate JWT token
             var token = GenerateJwtToken(user);
@@ -122,5 +128,114 @@ namespace Unishelf.Server.Services.Users
         {
             return await _dbContext.User.Select(u => u.UserName).ToListAsync();
         }
+
+
+        public async Task<List<dynamic>> GetAllUsers()
+        {
+            var users = await _dbContext.User
+                .Select(u => new
+                {
+                    UserID = _encryptionHelper.Encrypt(u.UserID.ToString()),  // Encrypt UserID
+                    u.UserName,
+                    Name = u.FirstName + " " + u.LastName,
+                    u.EmailAddress,
+                    u.PhoneNumber,
+                    u.IsCustomer,
+                    u.IsEmployee,
+                    u.IsManager,
+                    u.Active,
+                    u.LastLogIn
+                })
+                .ToListAsync();
+
+            return users.Cast<dynamic>().ToList();
+        }
+
+        public async Task<bool> UpdateIsCustomer(int userId, bool isCustomer)
+        {
+            var user = await _dbContext.User.FindAsync(userId);
+            if (user == null)
+            {
+                return false; // User not found
+            }
+
+            user.IsCustomer = isCustomer;
+            await _dbContext.SaveChangesAsync();
+            return true; // Update successful
+        }
+
+        public async Task<bool> UpdateIsEmployee(int userId, bool isEmployee)
+        {
+            var user = await _dbContext.User.FindAsync(userId);
+            if (user == null)
+            {
+                return false; // User not found
+            }
+
+            user.IsEmployee = isEmployee;
+            await _dbContext.SaveChangesAsync();
+            return true; // Update successful
+        }
+
+        public async Task<bool> UpdateIsManager(int userId, bool isManager)
+        {
+            var user = await _dbContext.User.FindAsync(userId);
+            if (user == null)
+            {
+                return false; // User not found
+            }
+
+            user.IsManager = isManager;
+            await _dbContext.SaveChangesAsync();
+            return true; // Update successful
+        }
+
+        public async Task<bool> UpdateActiveStatus(int userId, bool isActive)
+        {
+            var user = await _dbContext.User.FindAsync(userId);
+            if (user == null)
+            {
+                return false; // User not found
+            }
+
+            user.Active = isActive;
+            await _dbContext.SaveChangesAsync();
+            return true; // Update successful
+        }
+
+        public async Task<List<User>> GetAllUsersAsync()
+        {
+            return await _dbContext.User.ToListAsync();
+        }
+
+        public async Task<bool> UpdateUserFieldAsync(string encryptedUserId, string fieldName, bool value)
+        {
+            var field = fieldName.ToLower();
+            int userID = int.Parse(_encryptionHelper.Decrypt(encryptedUserId));
+
+            var query = _dbContext.User.Where(u => u.UserID == userID);
+
+            switch (field)
+            {
+                case "iscustomer":
+                    await query.ExecuteUpdateAsync(s => s.SetProperty(u => u.IsCustomer, value));
+                    break;
+                case "isemployee":
+                    await query.ExecuteUpdateAsync(s => s.SetProperty(u => u.IsEmployee, value));
+                    break;
+                case "ismanager":
+                    await query.ExecuteUpdateAsync(s => s.SetProperty(u => u.IsManager, value));
+                    break;
+                case "active":
+                    await query.ExecuteUpdateAsync(s => s.SetProperty(u => u.Active, value));
+                    break;
+                default:
+                    return false;
+            }
+
+            return true;
+        }
+
+
     }
 }

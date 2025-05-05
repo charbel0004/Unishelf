@@ -1,92 +1,367 @@
-/* Set background image for the homepage */
-
+﻿/* Set background for the homepage */
 .home-container {
-    background-image: url('Pictures/Background.jpg');
-    background-size: cover;
-    background-position: center;
+    background-color: #ffffff;
+    background-image: linear-gradient(to bottom, #ffffff, #f8f9fa);
     min-height: 100vh;
     position: relative;
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* Align to top instead of center */
-    padding-top: 5%; /* Add 10% padding from the top */
+    align-items: flex-start;
+    padding: 5% 1rem 2rem;
+    overflow-x: hidden;
 }
-.profile {
-    position: relative;
-    cursor: pointer;
-}
-
-.profile-dropdown {
-    position: absolute;
-    top: 30px;
-    right: 0;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 10px;
-    width: 200px;
-    z-index: 1000;
-}
-
-    .profile-dropdown p {
-        margin: 5px 0;
-        font-size: 14px;
-    }
-
-    .profile-dropdown button {
-        width: 100%;
-        padding: 8px;
-        border: none;
-        background-color: #f44336;
-        color: #fff;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-
-        .profile-dropdown button:hover {
-            background-color: #d32f2f;
-        }
 
 /* Container for content inside the homepage */
 .content-container {
     text-align: center;
     position: relative;
-    animation: moveElements 5s ease-in-out infinite; /* Apply animation */
+    width: 100%;
+    max-width: 1200px;
+    padding: 0 1rem;
 }
 
 /* Style for the headline */
 .headline {
+    color: #333333;
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    animation: fadeIn 1.5s ease-out;
+    font-weight: 700;
+    position: relative;
+    display: inline-block;
+}
+
+    .headline:after {
+        content: '';
+        position: absolute;
+        width: 60%;
+        height: 3px;
+        background: linear-gradient(to right, #4a90e2, #67b8e3);
+        bottom: -10px;
+        left: 20%;
+        border-radius: 2px;
+    }
+
+/* Category section */
+.category-section {
+    background-color: #ffffff;
+    width: 100%;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+    transition: transform 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+    .category-section:hover {
+        transform: translateY(-5px);
+    }
+
+/* Category header with title and see all button */
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 5px solid #f0f0f0;
+}
+
+    .category-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        color: #333;
+        font-weight: 600;
+        position: relative;
+        padding-left: 12px;
+    }
+
+        .category-header h2:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            height: 20px;
+            width: 4px;
+            background: linear-gradient(to bottom, #4a90e2, #67b8e3);
+            border-radius: 2px;
+        }
+
+/* Slider container */
+.slider-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Brand slider */
+.brand-slider {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 0.5rem 0.25rem;
+    scrollbar-width: none; /* Hide scrollbar for Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar for IE and Edge */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .brand-slider::-webkit-scrollbar {
+        display: none;
+    }
+
+/* Brand card */
+.brand-card {
+    flex: 0 0 auto;
+    width: fit-content; /* Fixed width for consistency */
+    border-radius: 12px;
+    padding: 1.25rem;
+    background-color: white;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-align: center;
+    margin: 0.5rem;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    position: relative;
+    overflow: hidden;
+}
+
+    .brand-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.07);
+        border-color: rgba(74, 144, 226, 0.2);
+    }
+
+    .brand-card::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(to right, #4a90e2, #67b8e3);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s ease;
+    }
+
+    .brand-card:hover::after {
+        transform: scaleX(1);
+    }
+
+/* Brand image container */
+.brand-image-container {
+    height: 120px; /* Fixed height */
+    width: fit-content; /* Full width of parent */
+    display: flex; /* Added flex display */
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 3%;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.brand-card:hover .brand-image-container {
+    background-color: #f0f7ff;
+}
+
+/* Brand image */
+.home-brand-image {
+    width: 100%; /* Responsive image */
+    height: 100%; /* Responsive image */
+    object-fit:fill;
+    transition: transform 0.3s ease;
+}
+
+.brand-card:hover .brand-image {
+    transform: scale(1.05);
+}
+
+/* Brand image placeholder */
+.brand-image-placeholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #e6e6e6, #f5f5f5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #4a90e2;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* Brand name */
+.brand-name {
+    margin-top: 2%;
+    font-size: 1.1rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #333;
+    transition: color 0.3s ease;
+}
+
+.brand-card:hover .brand-name {
+    color: #4a90e2;
+}
+
+/* Slider arrows */
+.slider-arrow {
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    z-index: 2;
+    color: #4a90e2;
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+}
+
+    .slider-arrow:hover {
+        background-color: #4a90e2;
+        color: white;
+        transform: scale(1.1);
+    }
+
+    .slider-arrow:active {
+        transform: scale(0.95);
+    }
+
+    .slider-arrow:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+/* See all button */
+.see-all-button {
+    padding: 0.5rem 1.2rem;
+    background: linear-gradient(to right, #4a90e2, #67b8e3);
     color: white;
-    font-size: 3rem;
-    margin-bottom: 20px;
-    animation: slideInFromBottom 2s ease-out;
+    border: none;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(74, 144, 226, 0.25);
+    display: flex;
+    align-items: center;
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
 }
 
-/* Animation for moving elements */
-@keyframes moveElements {
-    0% {
+    .see-all-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(74, 144, 226, 0.35);
+    }
+
+    .see-all-button:active {
         transform: translateY(0);
     }
 
-    50% {
-        transform: translateY(-20px);
+    .see-all-button::after {
+        content: '→';
+        margin-left: 6px;
+        font-size: 1.1rem;
+        transition: transform 0.2s ease;
     }
 
-    100% {
-        transform: translateY(0);
+    .see-all-button:hover::after {
+        transform: translateX(3px);
     }
-}
 
-/* Animation for the headline and button (slide in from bottom) */
-@keyframes slideInFromBottom {
-    0% {
+/* Animations */
+@keyframes fadeIn {
+    from {
         opacity: 0;
-        transform: translateY(50px);
+        transform: translateY(20px);
     }
 
-    100% {
+    to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* Media queries for responsiveness */
+@media (max-width: 768px) {
+    .headline {
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .category-section {
+        padding: 1rem;
+    }
+
+    .category-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .brand-card {
+        width: 150px;
+        padding: 1rem;
+    }
+
+    .brand-image-container {
+        height: 100%;
+        padding: 10px;
+    }
+
+    .slider-arrow {
+        width: 36px;
+        height: 36px;
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .headline {
+        font-size: 1.8rem;
+    }
+
+    .category-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+        .category-header .see-all-button {
+            align-self: flex-end;
+        }
+
+    .brand-card {
+        width: 130px;
+        height:fit-content;
+        padding: 0.75rem;
+    }
+
+    .brand-image-container {
+        height: 100%;
+        padding: 8px;
+    }
+
+    .brand-name {
+        font-size: 0.9rem;
+    }
+
+    .slider-arrow {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
     }
 }

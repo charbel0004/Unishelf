@@ -12,6 +12,7 @@
     using System.Text;
     using System.Security.Cryptography;
 using Unishelf.Server.Services.Users;
+using System;
 
 namespace Unishelf.Server.Controllers
     {
@@ -22,12 +23,14 @@ namespace Unishelf.Server.Controllers
             private readonly PasswordHasher _passwordHasher;
             private readonly ApplicationDbContext _dbContext;
             private readonly UserService _userService;
+            private readonly EncryptionHelper _encryptionHelper;
 
-            public HomeController(PasswordHasher passwordHasher, ApplicationDbContext dbContext, UserService userService)
+            public HomeController(PasswordHasher passwordHasher, ApplicationDbContext dbContext, UserService userService, EncryptionHelper encryptionHelper)
             {
                 _passwordHasher = passwordHasher;
                 _dbContext = dbContext;
                 _userService = userService;
+                _encryptionHelper = encryptionHelper;
             }
 
             [HttpPost("signup")]
@@ -105,39 +108,73 @@ namespace Unishelf.Server.Controllers
                     return StatusCode(500, new { message = "Unexpected error", details = ex.Message });
                 }
 
-            /*try
+             }
+        [HttpGet("UN_GetUsers")]
+        public async Task<IActionResult> GetUsers()
+        {
+            try
             {
-                using (var connection = new SqlConnection(_dbContext.Database.GetConnectionString()))
-                {
-                    connection.Open();
-
-                    using (var command = new SqlCommand("[dbo].[UN_GetUserNames]", connection))
-                    {
-                        command.CommandType = CommandType.StoredProcedure;
-
-                        using (var reader = command.ExecuteReader())
-                        {
-                            var userNames = new List<string>();
-
-                            while (reader.Read())
-                            {
-                                userNames.Add(reader["UserName"].ToString());
-                            }
-
-                            return Ok(userNames);
-                        }
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                return StatusCode(500, new { message = "Database error", details = ex.Message });
+                List<dynamic> users = await _userService.GetAllUsers();
+                return Ok(users);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Unexpected error", details = ex.Message });
-            }*/
+            }
         }
 
+
+        [HttpPut("{userId}/isCustomer")]
+        public async Task<IActionResult> UpdateIsCustomer(string userId, [FromBody] bool isCustomer)
+        {
+            int decryptedUserID = int.Parse(_encryptionHelper.Decrypt(userId));
+            var success = await _userService.UpdateIsCustomer(decryptedUserID, isCustomer);
+            if (!success)
+            {
+                return NotFound("User not found");
+            }
+            return Ok("User IsCustomer status updated successfully");
         }
+
+        // Update IsEmployee
+        [HttpPut("{userId}/isEmployee")]
+        public async Task<IActionResult> UpdateIsEmployee(string userId, [FromBody] bool isEmployee)
+        {
+            int decryptedUserID = int.Parse(_encryptionHelper.Decrypt(userId));
+            var success = await _userService.UpdateIsEmployee(decryptedUserID, isEmployee);
+            if (!success)
+            {
+                return NotFound("User not found");
+            }
+            return Ok("User IsEmployee status updated successfully");
+        }
+
+        // Update IsManager
+        [HttpPut("{userId}/isManager")]
+        public async Task<IActionResult> UpdateIsManager(string userId, [FromBody] bool isManager)
+        {
+            int decryptedUserID = int.Parse(_encryptionHelper.Decrypt(userId));
+            var success = await _userService.UpdateIsManager(decryptedUserID, isManager);
+            if (!success)
+            {
+                return NotFound("User not found");
+            }
+            return Ok("User IsManager status updated successfully");
+        }
+
+        // Update Active status
+        [HttpPut("{userId}/active")]
+        public async Task<IActionResult> UpdateActiveStatus(string userId, [FromBody] bool isActive)
+        {
+            int decryptedUserID = int.Parse(_encryptionHelper.Decrypt(userId));
+            var success = await _userService.UpdateActiveStatus(decryptedUserID, isActive);
+            if (!success)
+            {
+                return NotFound("User not found");
+            }
+            return Ok("User Active status updated successfully");
+        }
+
+
+    }
     }

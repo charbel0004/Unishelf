@@ -270,22 +270,22 @@ const Products: React.FC = () => {
 
         const reader = new FileReader();
         reader.onloadend = async () => {
-            const base64String = reader.result?.toString().split(",")[1];
-            if (!base64String) {
+            const base64StringFull = reader.result?.toString(); // Full base64 data URL
+            const base64StringRaw = base64StringFull?.split(",")[1]; // Extract the raw base64 part
+
+            if (!base64StringFull) {
                 console.error("Failed to convert image to Base64.");
                 return;
             }
 
-            const imageData = `data:image/png;base64,${base64String}`;
-
             if (editableProduct?.productID) {
-                
-                try {
-                    const payload = {
-                        ProductID: editableProduct.productID,
-                        Base64Image: base64String,
-                    };
+                // EXISTING PRODUCT: upload directly to server
+                const payload = {
+                    ProductID: editableProduct.productID,
+                    Base64Image: base64StringRaw, // Send only the raw base64 string
+                };
 
+                try {
                     const response = await fetch(`${config.API_URL}/api/StockManager/AddImages`, {
                         method: "POST",
                         headers: {
@@ -298,28 +298,38 @@ const Products: React.FC = () => {
                         const errorData = await response.json();
                         console.error("Error uploading image:", errorData);
                         alert("Failed to upload image: " + (errorData.message || "Unknown error"));
-                    } else {
-                        console.log("Image uploaded successfully!");
-
-                        
-                        setEditableProduct((prevProduct) => ({
-                            ...prevProduct,
-                            images: [...(prevProduct?.images || []), imageData],
-                        }));
+                        return;
                     }
+
+                    const imageDataFromServer = await response.json(); // Expected: { encryptedImageID: "..." }
+                    console.log("Image uploaded successfully:", imageDataFromServer);
+
+                    // Update product with uploaded image using the same structure
+                    setEditableProduct((prevProduct) => ({
+                        ...prevProduct!,
+                        images: [
+                            ...(prevProduct?.images || []),
+                            {
+                                imageID: imageDataFromServer.encryptedImageID,
+                                imageBase64: base64StringRaw, // Store the raw base64 string
+                            },
+                        ],
+                    }));
                 } catch (error) {
                     console.error("Error in image upload:", error);
                     alert("An error occurred while uploading the image.");
                 }
             } else {
-               
-                setNewProductImages((prevImages) => [...prevImages, imageData]);
+                // NEW PRODUCT: store full data URL (consistent with how it's used here)
+                setNewProductImages((prevImages) => [...prevImages, base64StringFull]);
                 console.log("New product image stored locally and UI updated.");
             }
         };
 
         reader.readAsDataURL(file);
     };
+
+
 
 
 
@@ -413,19 +423,8 @@ const Products: React.FC = () => {
 
 
 
-
     const handleSave = async () => {
         setLoading(true);
-
-        // Determine the correct images to send
-        let imageData;
-        if (editableProduct?.productID) {
-            // Existing product: Only send newly uploaded images
-            imageData = newProductImages.length > 0 ? newProductImages : undefined;
-        } else {
-            // New product: Preserve images until saved
-            imageData = newProductImages;
-        }
 
         const requestBody = {
             data: {
@@ -439,13 +438,14 @@ const Products: React.FC = () => {
                 depth: editableProduct?.depth ?? null,
                 pricePerMsq: editableProduct?.pricePerMsq ?? null,
                 price: editableProduct?.price ?? null,
+                currency: editableProduct?.currency || "",
                 sqmPerBox: editableProduct?.sqmPerBox ?? null,
                 qtyPerBox: editableProduct?.qtyPerBox ?? null,
                 quantity: editableProduct?.quantity ?? null,
                 available: editableProduct?.available ?? false,
                 imageData: editableProduct?.productID
-                    ? editableProduct?.images?.map(img => img.imageData) // For existing product, use existing images
-                    : newProductImages || [], // Use only necessary images
+                    ? newProductImages // Only send newly uploaded images for existing products
+                    : newProductImages || [], // Send all for new products
             }
         };
 
@@ -460,9 +460,14 @@ const Products: React.FC = () => {
 
             console.log("Product saved successfully!");
 
-            // Clear images only for new products after saving
-            if (!editableProduct?.productID) {
-                setNewProductImages([]);
+            // Clear newly uploaded images after saving
+            setNewProductImages([]);
+
+            // Optionally, refresh product details or the product list
+            if (editableProduct?.productID) {
+                fetchProductDetails(editableProduct.productID); // Refresh details
+            } else if (selectedBrand) {
+                handleBrandClick(selectedBrand.brandID, selectedBrand.categoryID); // Refresh list
             }
 
         } catch (error) {
@@ -471,7 +476,7 @@ const Products: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
+    };  
 
 
 
@@ -676,6 +681,16 @@ const Products: React.FC = () => {
                                       type="text"
                                       value={editableProduct?.price || ""}
                                       onChange={(e) => handleInputChange("price", e.target.value)}
+                                      className="full-width-input"
+                                  />
+                              </div>
+
+                              <div className="grid-item">
+                                  <label><strong>Currency:</strong></label>
+                                  <input
+                                      type="text"
+                                      value={editableProduct?.currency || ""}
+                                      onChange={(e) => handleInputChange("currency", e.target.value)}
                                       className="full-width-input"
                                   />
                               </div>

@@ -1,17 +1,18 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using Unishelf.Server.Models;
 
 namespace Unishelf.Server.Services.Products
 {
     public interface IProductsService
     {
-        Task<IActionResult> GetCategoriesWithBrandsAndImages();
-        Task<IActionResult> GetProductsByBrandAndCategory(string brandId, string categoryId);
-        Task<IActionResult> GetProductDetails(string productId);
-        Task<IActionResult> AddImage([FromBody] JsonElement request);
-        Task<IActionResult> DeleteImage(string imageID);
-        Task<IActionResult> AddOrUpdateProduct([FromBody] JsonElement request);
-        Task<IActionResult> GetActiveBrands();
-        Task<IActionResult> GetActiveCategories();
+        Task<List<object>> GetCategoriesWithBrandsAndImages();
+        Task<List<object>> GetProductsByBrandAndCategory(string brandId, string categoryId);
+        Task<object> GetProductDetails(string productId);
+        Task<string> AddImage(string encryptedProductId, string base64Image); // <-- Changed to return string
+        Task<Images> DeleteImage(string imageID);
+        Task<string> AddOrUpdateProduct(JsonElement request);
+        Task<List<object>> GetActiveBrands();
+        Task<List<object>> GetActiveCatrgories();
     }
 }

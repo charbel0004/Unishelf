@@ -47,7 +47,20 @@ namespace Unishelf.Server.Controllers.StockManager
             }
         }
 
-       
+
+        [HttpGet("brandsByCategory/{categoryID}")]
+        public async Task<IActionResult> GetBrandsByCategory(string categoryID)
+        {
+            try
+            {
+                var brands = await _productServices.GetBrandsByCategory(categoryID); // Fetch brands for the category
+                return Ok(brands);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while fetching brands.", Error = ex.Message });
+            }
+        }
 
 
 
@@ -84,7 +97,7 @@ namespace Unishelf.Server.Controllers.StockManager
         }
 
 
-      
+
 
         [HttpPost("AddImages")]
         public async Task<IActionResult> AddImage([FromBody] JsonElement request)
@@ -102,8 +115,9 @@ namespace Unishelf.Server.Controllers.StockManager
                 string encryptedProductId = productIdElement.GetString();
                 string base64Image = base64ImageElement.GetString();
 
-                Images image = await _productServices.AddImage(encryptedProductId, base64Image);
-                return Ok(new { Message = "Image added successfully.", ImageID = image.ImageID });
+                string encryptedImageId = await _productServices.AddImage(encryptedProductId, base64Image);
+
+                return Ok(new { EncryptedImageID = encryptedImageId }); // ✅ Return encrypted ID inside an object
             }
             catch (ArgumentException ex)
             {
