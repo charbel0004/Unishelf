@@ -68,11 +68,12 @@ input {
     .brand-item.active {
         background-color: #ecf0f1;
         transform: translateX(5px);
+        height:fit-content;
     }
 
 .brand-image {
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     margin-right: 10px;
     border-radius: 50%;
 }

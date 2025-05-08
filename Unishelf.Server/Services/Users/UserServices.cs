@@ -43,7 +43,8 @@ namespace Unishelf.Server.Services.Users
                 PhoneNumber = phoneNumber,
                 EmailAddress = email,
                 Password = hashedPassword,
-                LastLogIn = DateTime.Now
+                LastLogIn = DateTime.Now,
+                Active = true, // Set default active status to true
             };
 
             _dbContext.User.Add(user);
@@ -151,57 +152,7 @@ namespace Unishelf.Server.Services.Users
             return users.Cast<dynamic>().ToList();
         }
 
-        public async Task<bool> UpdateIsCustomer(int userId, bool isCustomer)
-        {
-            var user = await _dbContext.User.FindAsync(userId);
-            if (user == null)
-            {
-                return false; // User not found
-            }
 
-            user.IsCustomer = isCustomer;
-            await _dbContext.SaveChangesAsync();
-            return true; // Update successful
-        }
-
-        public async Task<bool> UpdateIsEmployee(int userId, bool isEmployee)
-        {
-            var user = await _dbContext.User.FindAsync(userId);
-            if (user == null)
-            {
-                return false; // User not found
-            }
-
-            user.IsEmployee = isEmployee;
-            await _dbContext.SaveChangesAsync();
-            return true; // Update successful
-        }
-
-        public async Task<bool> UpdateIsManager(int userId, bool isManager)
-        {
-            var user = await _dbContext.User.FindAsync(userId);
-            if (user == null)
-            {
-                return false; // User not found
-            }
-
-            user.IsManager = isManager;
-            await _dbContext.SaveChangesAsync();
-            return true; // Update successful
-        }
-
-        public async Task<bool> UpdateActiveStatus(int userId, bool isActive)
-        {
-            var user = await _dbContext.User.FindAsync(userId);
-            if (user == null)
-            {
-                return false; // User not found
-            }
-
-            user.Active = isActive;
-            await _dbContext.SaveChangesAsync();
-            return true; // Update successful
-        }
 
         public async Task<List<User>> GetAllUsersAsync()
         {

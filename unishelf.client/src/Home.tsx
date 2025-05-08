@@ -17,20 +17,16 @@ interface Category {
 
 const Home: React.FC = () => {
     const [categories, setCategories] = useState<Category[]>([]);
+    const [selectedCategoryID, setSelectedCategoryID] = useState<string>("all");
     const navigate = useNavigate();
-
-    // Refs for the sliders
     const sliderRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     useEffect(() => {
-        // Disable back button
         const handleBackButton = () => {
             window.history.pushState(null, '', window.location.href);
         };
-
         window.history.pushState(null, '', window.location.href);
         window.addEventListener('popstate', handleBackButton);
-
         return () => {
             window.removeEventListener('popstate', handleBackButton);
         };
@@ -55,8 +51,6 @@ const Home: React.FC = () => {
                             : [],
                     }));
                     setCategories(parsed);
-
-                    // Initialize the slider refs array with the correct length
                     sliderRefs.current = Array(parsed.length).fill(null);
                 } else {
                     console.error("Unexpected response format:", raw);
@@ -65,14 +59,12 @@ const Home: React.FC = () => {
                 console.error("Error fetching categories:", error);
             }
         };
-
         fetchCategories();
     }, []);
 
     const handleSeeAll = (categoryID: string) => {
         navigate(`/AllBrands/${categoryID}`);
     };
-
 
     const scrollSlider = (index: number, direction: 'left' | 'right') => {
         const slider = sliderRefs.current[index];
@@ -87,70 +79,99 @@ const Home: React.FC = () => {
             <div className="content-container">
                 <h1 className="headline">Welcome to Unishelf</h1>
 
-                {categories.map((category, index) => (
-                    <div key={category.CategoryID} className="category-section">
-                        <div className="category-header">
-                            <h2>{category.CategoryName}</h2>
-                            {category.Brands.length > 5}
-                            <button
-                                className="see-all-button"
-                                onClick={() => handleSeeAll(category.CategoryID)}
-                            >
-                                See all
-                            </button>
-                        </div>
+                {/* Filter Dropdown */}
+                <div className="filter-bar">
+                    <label htmlFor="categoryFilter">Filter by Category:</label>
+                    <select
+                        id="categoryFilter"
+                        value={selectedCategoryID}
+                        onChange={(e) => setSelectedCategoryID(e.target.value)}
+                    >
+                        <option value="all">All Categories</option>
+                        {categories.map((cat) => (
+                            <option key={cat.CategoryID} value={cat.CategoryID}>
+                                {cat.CategoryName}
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
-                        <div className="slider-container">
-                            {category.Brands.length > 5 && (
+                {/* Filtered Category Sections */}
+                {categories
+                    .filter(cat => selectedCategoryID === "all" || cat.CategoryID === selectedCategoryID)
+                    .map((category, index) => (
+                        <div key={category.CategoryID} className="category-section">
+                            <div className="category-header">
+                                <h2>{category.CategoryName}</h2>
                                 <button
-                                    className="slider-arrow slider-arrow-left"
-                                    onClick={() => scrollSlider(index, 'left')}
-                                    aria-label="Scroll left"
+                                    className="see-all-button"
+                                    onClick={() => handleSeeAll(category.CategoryID)}
                                 >
-                                    &lt;
+                                    See all
                                 </button>
-                            )}
-
-                            <div
-                                className="brand-slider"
-                                ref={el => sliderRefs.current[index] = el}
-                            >
-                                {category.Brands.map((brand) => (
-                                    <div
-                                        key={brand.BrandID}
-                                        className="brand-card"
-                                        onClick={() => navigate(`/brand/${brand.BrandID}`, { state: { brandName: brand.BrandName } })}
-                                    >
-                                        <div className="brand-image-container">
-                                            {brand.BrandImageBase64 ? (
-                                                <img
-                                                    src={`data:image/jpeg;base64,${brand.BrandImageBase64}`}
-                                                    alt={brand.BrandName}
-                                                    className="home-brand-image"
-                                                />
-                                            ) : (
-                                                <div className="brand-image-placeholder">
-                                                    {brand.BrandName.substring(0, 1)}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <p className="brand-name">{brand.BrandName}</p>
-                                    </div>
-                                ))}
                             </div>
 
-                            {category.Brands.length > 5 && (
-                                <button
-                                    className="slider-arrow slider-arrow-right"
-                                    onClick={() => scrollSlider(index, 'right')}
-                                    aria-label="Scroll right"
+                            <div className="slider-container">
+                                {category.Brands.length > 5 && (
+                                    <button
+                                        className="slider-arrow slider-arrow-left"
+                                        onClick={() => scrollSlider(index, 'left')}
+                                        aria-label="Scroll left"
+                                    >
+                                        &lt;
+                                    </button>
+                                )}
+
+                                <div
+                                    className="brand-slider"
+                                    ref={el => sliderRefs.current[index] = el}
                                 >
-                                    &gt;
-                                </button>
-                            )}
+                                    {category.Brands.map((brand) => (
+                                        <div
+                                            key={brand.BrandID}
+                                            className="brand-card"
+                                            onClick={() =>
+                                                navigate(
+                                                    `/AllProducts/${brand.BrandID}/${category.CategoryID}`,
+                                                    {
+                                                        state: {
+                                                            brandName: brand.BrandName,
+                                                            categoryName: category.CategoryName
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                        >
+                                            <div className="brand-image-container">
+                                                {brand.BrandImageBase64 ? (
+                                                    <img
+                                                        src={`data:image/jpeg;base64,${brand.BrandImageBase64}`}
+                                                        alt={brand.BrandName}
+                                                        className="home-brand-image"
+                                                    />
+                                                ) : (
+                                                    <div className="brand-image-placeholder">
+                                                        {brand.BrandName.substring(0, 1)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <p className="brand-name">{brand.BrandName}</p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {category.Brands.length > 5 && (
+                                    <button
+                                        className="slider-arrow slider-arrow-right"
+                                        onClick={() => scrollSlider(index, 'right')}
+                                        aria-label="Scroll right"
+                                    >
+                                        &gt;
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
             </div>
         </div>
     );

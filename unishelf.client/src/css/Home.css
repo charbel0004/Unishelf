@@ -297,6 +297,22 @@
     }
 }
 
+.filter-bar {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+}
+
+    .filter-bar select {
+        padding: 5px;
+        font-size: 16px;
+        background-color:white;
+        color: black;
+        border-radius:40px;
+    }
+
 /* Media queries for responsiveness */
 @media (max-width: 768px) {
     .headline {

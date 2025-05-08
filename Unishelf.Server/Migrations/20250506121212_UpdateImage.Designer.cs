@@ -12,8 +12,8 @@ using Unishelf.Server.Data;
 namespace Unishelf.Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250127202408_Update_BrandImages")]
-    partial class Update_BrandImages
+    [Migration("20250506121212_UpdateImage")]
+    partial class UpdateImage
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -210,6 +210,10 @@ namespace Unishelf.Server.Migrations
                     b.Property<int>("CategoryID")
                         .HasColumnType("int");
 
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("Depth")
                         .HasColumnType("int");
 
@@ -220,11 +224,11 @@ namespace Unishelf.Server.Migrations
                     b.Property<int?>("Height")
                         .HasColumnType("int");
 
-                    b.Property<int?>("Price")
-                        .HasColumnType("int");
+                    b.Property<double?>("Price")
+                        .HasColumnType("float");
 
-                    b.Property<int?>("PricePerMsq")
-                        .HasColumnType("int");
+                    b.Property<double?>("PricePerMsq")
+                        .HasColumnType("float");
 
                     b.Property<string>("ProductName")
                         .IsRequired()
@@ -237,8 +241,8 @@ namespace Unishelf.Server.Migrations
                     b.Property<int?>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<int?>("SqmPerBox")
-                        .HasColumnType("int");
+                    b.Property<double?>("SqmPerBox")
+                        .HasColumnType("float");
 
                     b.Property<int?>("Width")
                         .HasColumnType("int");

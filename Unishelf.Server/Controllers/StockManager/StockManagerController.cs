@@ -80,7 +80,22 @@ namespace Unishelf.Server.Controllers.StockManager
             }
         }
 
-       
+
+        [HttpGet("active-products-by-brand-and-category")]
+        public async Task<IActionResult> GetActiveProductsByBrandAndCategory([FromQuery] string brandId, [FromQuery] string categoryId)
+        {
+            try
+            {
+                var productDetails = await _productServices.GetActiveProductsByBrandAndCategory(brandId, categoryId);
+                return Ok(productDetails);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while fetching products.", Error = ex.Message });
+            }
+        }
+
+
 
         [HttpGet("GetProductDetails/{productId}")]
         public async Task<IActionResult> GetProductDetails(string productId)

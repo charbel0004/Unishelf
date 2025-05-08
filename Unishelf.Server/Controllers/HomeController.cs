@@ -124,56 +124,9 @@ namespace Unishelf.Server.Controllers
         }
 
 
-        [HttpPut("{userId}/isCustomer")]
-        public async Task<IActionResult> UpdateIsCustomer(string userId, [FromBody] bool isCustomer)
-        {
-            int decryptedUserID = int.Parse(_encryptionHelper.Decrypt(userId));
-            var success = await _userService.UpdateIsCustomer(decryptedUserID, isCustomer);
-            if (!success)
-            {
-                return NotFound("User not found");
-            }
-            return Ok("User IsCustomer status updated successfully");
-        }
+        
 
-        // Update IsEmployee
-        [HttpPut("{userId}/isEmployee")]
-        public async Task<IActionResult> UpdateIsEmployee(string userId, [FromBody] bool isEmployee)
-        {
-            int decryptedUserID = int.Parse(_encryptionHelper.Decrypt(userId));
-            var success = await _userService.UpdateIsEmployee(decryptedUserID, isEmployee);
-            if (!success)
-            {
-                return NotFound("User not found");
-            }
-            return Ok("User IsEmployee status updated successfully");
-        }
-
-        // Update IsManager
-        [HttpPut("{userId}/isManager")]
-        public async Task<IActionResult> UpdateIsManager(string userId, [FromBody] bool isManager)
-        {
-            int decryptedUserID = int.Parse(_encryptionHelper.Decrypt(userId));
-            var success = await _userService.UpdateIsManager(decryptedUserID, isManager);
-            if (!success)
-            {
-                return NotFound("User not found");
-            }
-            return Ok("User IsManager status updated successfully");
-        }
-
-        // Update Active status
-        [HttpPut("{userId}/active")]
-        public async Task<IActionResult> UpdateActiveStatus(string userId, [FromBody] bool isActive)
-        {
-            int decryptedUserID = int.Parse(_encryptionHelper.Decrypt(userId));
-            var success = await _userService.UpdateActiveStatus(decryptedUserID, isActive);
-            if (!success)
-            {
-                return NotFound("User not found");
-            }
-            return Ok("User Active status updated successfully");
-        }
+       
 
 
     }

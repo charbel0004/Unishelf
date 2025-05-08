@@ -8,10 +8,8 @@ namespace Unishelf.Server.Services.Users
         Task<bool> SignUp(string firstName, string lastName, string username, string email, string phoneNumber, string password);
         Task<(bool success, string token, string message)> Login(string usernameOrEmail, string password);
         Task<List<dynamic>> GetAllUsers();
-        Task<bool> UpdateIsCustomer(int userId, bool isCustomer);
-        Task<bool> UpdateIsEmployee(int userId, bool isEmployee);
-        Task<bool> UpdateIsManager(int userId, bool isManager);
-        Task<bool> UpdateActiveStatus(int userId, bool isActive);
-        
+        Task<bool> UpdateUserFieldAsync(string encryptedUserId, string fieldName, bool value);
+
+
     }
 }

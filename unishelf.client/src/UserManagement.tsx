@@ -104,10 +104,10 @@ const UserManagement: React.FC = () => {
                     <tbody>
                         {filteredUsers.map(user => (
                             <tr key={user.encryptedUserID}>
-                                <td>{user.userName}</td>
-                                <td>{user.firstName} {user.lastName}</td>
-                                <td>{user.emailAddress}</td>
-                                <td>
+                                <td className="user-td">{user.userName}</td>
+                                <td className="user-td">{user.firstName} {user.lastName}</td>
+                                <td className="user-td">{user.emailAddress}</td>
+                                <td className="user-td">
                                     <label className="usersswitch">
                                         <input
                                             type="checkbox"
@@ -119,7 +119,7 @@ const UserManagement: React.FC = () => {
                                         <span className="userslider"></span>
                                     </label>
                                 </td>
-                                <td>
+                                <td className="user-td">
                                     <label className="usersswitch">
                                         <input
                                             type="checkbox"
@@ -131,7 +131,7 @@ const UserManagement: React.FC = () => {
                                         <span className="userslider"></span>
                                     </label>
                                 </td>
-                                <td>
+                                <td className="user-td">
                                     <label className="usersswitch">
                                         <input
                                             type="checkbox"
@@ -143,7 +143,7 @@ const UserManagement: React.FC = () => {
                                         <span className="userslider"></span>
                                     </label>
                                 </td>
-                                <td>
+                                <td className="user-td">
                                     <label className="usersswitch">
                                         <input
                                             type="checkbox"

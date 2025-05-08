@@ -1,0 +1,307 @@
+/* AllProducts.css - Fixed and consistent */
+.all-products-page {
+    max-height: 100%;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+    overflow-x: hidden;
+}
+
+.allproducts-counter {
+    display: flex;
+    align-content: flex-start;
+    background-color: none;
+    padding: 0;
+}
+
+.all-products-container {
+    padding: 1.5rem;
+    width: 90%;
+    font-family: 'Roboto', 'Segoe UI', sans-serif;
+    margin: 0 auto;
+}
+
+    /* Main heading */
+    .all-products-container h2 {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #333;
+        text-align: center;
+    }
+
+/* Product grid - using flex with column direction initially */
+.all-products-container {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Product card styling */
+.allproduct-card {
+    border: none;
+    width: fit-content;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    position: relative;
+}
+
+    .allproduct-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+.allproduct-quantity {
+    color: black;
+    margin-top: 1%;
+    padding: 2px;
+}
+
+.allproduct-price {
+    padding: 2px;
+}
+
+/* Product title */
+.allproduct-card h3 {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: #333;
+    margin: auto;
+    width: 100%; /* Ensure title takes full width */
+    text-align: center; /* Center the title */
+    margin-bottom: 10px; /* Add space after title */
+}
+
+.allproduct-tit::file-selector-button {
+    margin: 0;
+}
+
+/* Product image container */
+.allproduct-card img {
+    display: block; /* Changed from inline-block to block */
+    height: auto;
+    max-height: 200px;
+    width: 200px;
+    max-width: 100%;
+    border-radius: 4px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+    margin: 0 auto; /* Center the image */
+}
+
+    .allproduct-card img:hover {
+        transform: scale(1.05);
+    }
+
+/* Loading and error states */
+.all-products-container div:only-child:not(.allproduct-card) {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    font-size: 1.1rem;
+}
+
+/* Mobile responsiveness - UPDATED for 2 columns on mobile */
+@media (max-width: 767px) {
+    .all-products-container {
+        padding: 1rem;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+        .all-products-container h2 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            grid-column: 1 / -1;
+        }
+
+    .allproduct-card {
+        padding: 1rem;
+        margin-bottom: 0;
+        width: auto;
+        height: auto; /* Ensure card height adjusts to content */
+        display: flex;
+        flex-direction: column;
+    }
+
+        .allproduct-card h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            line-height: 1.2;
+            overflow-wrap: break-word;
+            height: auto; /* Allow title to take necessary height */
+        }
+
+        .allproduct-card p {
+            font-size: 0.9rem;
+        }
+
+        .allproduct-card img {
+            max-height: 120px; /* Slightly reduced height for mobile */
+            margin-top: 5px; /* Add space after title */
+            display: block; /* Ensure image is block-level */
+        }
+}
+
+.slider-wrapper {
+    position: relative;
+    width: 100%; /* Take full width of parent */
+    margin: auto;
+    overflow: hidden; /* Essential for the slide effect */
+}
+
+.slider-controls {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.slider-container {
+    display: flex;
+    width: 100%;
+    transition: transform 0.5s ease;
+}
+
+.slider-slide {
+    flex: 0 0 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.slider-image {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 5px;
+    object-fit: contain;
+    margin: 0 auto;
+    display: block; /* Ensure block display */
+   
+}
+
+/* Navigation arrows */
+.slider-arrow {
+    position: absolute;
+    top: 50%;
+    width: 32px;
+    height: 32px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 18px;
+    color: #333;
+    z-index: 2;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+    .slider-arrow:hover {
+        background-color: rgba(255, 255, 255, 0.9);
+        color: #007acc;
+    }
+
+    .slider-arrow.left {
+        left: 10px;
+    }
+
+    .slider-arrow.right {
+        right: 10px;
+    }
+
+/* Dots */
+.slider-dots {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.dot {
+    display: inline-block;
+    height: 8px;
+    width: 8px;
+    margin: 0 4px;
+    background-color: #bbb;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+    cursor: pointer;
+}
+
+    .dot.active {
+        background-color: #007acc;
+    }
+
+/* Tablet and desktop */
+@media (min-width: 768px) {
+    .all-products-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+        .all-products-container h2 {
+            grid-column: 1 / -1;
+        }
+
+        .all-products-container > p {
+            grid-column: 1 / -1;
+        }
+
+    .allproduct-card {
+        margin-bottom: 0;
+    }
+}
+
+.allproducts-search-bar {
+    width: 70%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 16px;
+}
+
+/* Additional CSS for the description text specifically on mobile */
+@media (max-width: 767px) {
+    .allproduct-description {
+        font-size: 0.8rem;
+        line-height: 1.3;
+        white-space: normal;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        margin: 0.5rem 0;
+    }
+}
+
+/* Extra small devices - even smaller font */
+@media (max-width: 480px) {
+    .allproduct-description {
+        font-size: 0.75rem;
+        line-height: 1.2;
+        -webkit-line-clamp: 2;
+        margin: 0.25rem 0;
+    }
+
+    .slider-image {
+        width: 100%;
+        height: auto;
+        max-height: none;
+        display: block;
+    }
+
+    .allproduct-card {
+        padding: 0.75rem;
+    }
+
+        .allproduct-card img {
+            max-height: 100px;
+        }
+}

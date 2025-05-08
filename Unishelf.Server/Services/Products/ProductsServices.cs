@@ -101,6 +101,8 @@ namespace Unishelf.Server.Services.Products
                     BrandID = encryptedBrandId,
                     ProductName = p.ProductName,
                     Description = p.Description,
+                    Price = p.Price,
+                    PricePerMsq  = p.PricePerMsq,
                     CategoryID = encryptedCategoryId,
                     Quantity = p.Quantity,
                     Images = _dbContext.Images
@@ -113,6 +115,40 @@ namespace Unishelf.Server.Services.Products
 
             return products.Cast<object>().ToList();
         }
+
+        public async Task<List<object>> GetActiveProductsByBrandAndCategory(string encryptedBrandId, string encryptedCategoryId)
+        {
+            var decryptedBrandId = _encryptionHelper.Decrypt(encryptedBrandId);
+            var decryptedCategoryId = _encryptionHelper.Decrypt(encryptedCategoryId);
+
+            var products = await _dbContext.Products
+                .Where(p => p.BrandID == int.Parse(decryptedBrandId) &&
+                            p.CategoryID == int.Parse(decryptedCategoryId) &&
+                            p.Available == true)
+                .Select(p => new
+                {
+                    ProductID = _encryptionHelper.Encrypt(p.ProductID.ToString()),
+                    BrandID = encryptedBrandId,
+                    BrandName = p.Brands.BrandName,                  // Include Brand Name
+                    ProductName = p.ProductName,
+                    Currency = p.Currency,
+                    Description = p.Description,
+                    Price = p.Price,
+                    PricePerMsq = p.PricePerMsq,
+                    CategoryID = encryptedCategoryId,
+                    CategoryName = p.Categories.CategoryName,        // Include Category Name
+                    Quantity = p.Quantity,
+                    Images = _dbContext.Images
+                        .Where(img => img.ProductID == p.ProductID)
+                        .OrderBy(img => img.ImageID)
+                        .Select(img => Convert.ToBase64String(img.Image))
+                        .ToList()
+                })
+                .ToListAsync();
+
+            return products.Cast<object>().ToList();
+        }
+
 
         public async Task<object> GetProductDetails(string encryptedProductId)
         {

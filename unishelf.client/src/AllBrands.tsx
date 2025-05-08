@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from 'react-router-dom';
-import config from "./config"; // Ensure config has the correct API URL
+import { useParams, useNavigate } from 'react-router-dom';
+import config from "./config";
 import "./css/AllBrands.css";
 
 interface Brand {
@@ -16,10 +16,11 @@ interface ApiResponse {
 
 const AllBrands: React.FC = () => {
     const { categoryID } = useParams();
+    const navigate = useNavigate();
     const [brands, setBrands] = useState<Brand[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [categoryName, setCategoryName] = useState<string>(""); // To store the category name
+    const [categoryName, setCategoryName] = useState<string>("");
 
     useEffect(() => {
         const fetchBrands = async () => {
@@ -27,12 +28,12 @@ const AllBrands: React.FC = () => {
                 try {
                     const response = await fetch(`${config.API_URL}/api/StockManager/brandsByCategory/${categoryID}`);
                     const data: ApiResponse = await response.json();
-                    setBrands(data.brands || []); // Access the brands array
-                    setCategoryName(data.categoryName || ""); // Access the category name
-                    console.log("API Response in AllBrands:", data); // Keep this for debugging
+                    setBrands(data.brands || []);
+                    setCategoryName(data.categoryName || "");
+                    console.log("API Response in AllBrands:", data);
                 } catch (err) {
                     setError("Error fetching brands.");
-                    console.error("Error fetching brands:", err); // Log the error for debugging
+                    console.error("Error fetching brands:", err);
                 } finally {
                     setLoading(false);
                 }
@@ -42,34 +43,39 @@ const AllBrands: React.FC = () => {
         fetchBrands();
     }, [categoryID]);
 
-    if (loading) {
-        return <div>Loading...</div>;
-    }
-
-    if (error) {
-        return <div>{error}</div>;
-    }
+    if (loading) return <div>Loading...</div>;
+    if (error) return <div>{error}</div>;
 
     return (
-        <div className="all-brands-container">
-            <h1 className="allbrands-h1">All Brands for {categoryName}</h1>
-            <div className="brand-list">
-                {brands.length > 0 ? (
-                    brands.map((brand) => (
-                        <div key={brand.brandID} className="brand-card">
-                            {brand.brandImageBase64 && (
-                                <img
-                                    src={`data:image/jpeg;base64,${brand.brandImageBase64}`}
-                                    alt={brand.brandName}
-                                    className="brand-image"
-                                />
-                            )}
-                            <p>{brand.brandName}</p>
-                        </div>
-                    ))
-                ) : (
-                    <p>No brands available for this category.</p>
-                )}
+        <div className="all-brands-page">
+            <div className="all-brands-container">
+                <h1 className="allbrands-h1">All Brands for <span style={{ color: "#007acc" }}>{categoryName}</span></h1>
+                <div className="allbrand-list">
+                    {brands.length > 0 ? (
+                        brands.map((brand) => (
+                            <div
+                                key={brand.brandID}
+                                className="allbrand-card"
+                                onClick={() =>
+                                    navigate(`/AllProducts/${brand.brandID}/${categoryID}`
+                                    )
+                                }
+                                style={{ cursor: 'pointer' }}
+                            >
+                                {brand.brandImageBase64 && (
+                                    <img
+                                        src={`data:image/jpeg;base64,${brand.brandImageBase64}`}
+                                        alt={brand.brandName}
+                                        className="allbrand-image"
+                                    />
+                                )}
+                                <p>{brand.brandName}</p>
+                            </div>
+                        ))
+                    ) : (
+                        <p>No brands available for this category.</p>
+                    )}
+                </div>
             </div>
         </div>
     );
