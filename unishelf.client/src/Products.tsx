@@ -2,38 +2,95 @@
 import "./css/Products.css";
 import config from "./config";
 
+interface Category {
+    categoryID: string;
+    categoryName: string;
+    brands: Brand[];
+}
+
+interface SimpleCategory {
+    categoryID: string;
+    categoryName: string;
+}
+
+interface Brand {
+    brandID: string;
+    brandName: string;
+    brandImageBase64?: string;
+}
+
+interface Product {
+    productID: string;
+    productName: string;
+    quantity: number;
+    images: string[];
+}
+
+interface ProductDetails {
+    productID: string | null;
+    productName: string | null;
+    categoryID: string;
+    categoryName: string;
+    brandID: string;
+    brandName: string;
+    description: string | null;
+    height: number | null;
+    width: number | null;
+    depth: number | null;
+    pricePerMsq: number | null;
+    price: number | null;
+    currency: string | null;
+    sqmPerBox: number | null;
+    qtyPerBox: number | null;
+    quantity: number | null;
+    available: boolean;
+    images: { imageID: string; imageData: string }[];
+}
+
 const Categories: React.FC<{
-  categories: Category[];
-  selectedBrand: { brandID: string; categoryID: string } | null;
-  onBrandClick: (brandID: string, categoryID: string) => void;
+    categories: Category[];
+    selectedBrand: { brandID: string; categoryID: string } | null;
+    onBrandClick: (brandID: string, categoryID: string) => void;
 }> = ({ categories, selectedBrand, onBrandClick }) => {
-  return (
-    <nav className="categories-navbar">
-      <ul>
-        {categories.map((category) => (
-          <li key={category.categoryID} className="category-item">
-            <h3>{category.categoryName}</h3>
-            <ul className="brands-list">
-              {category.brands.map((brand) => (
-                <li
-                  key={`${category.categoryID}-${brand.brandID}`}
-                  className={`brand-item ${selectedBrand?.brandID === brand.brandID ? "active" : ""}`}
-                  onClick={() => onBrandClick(brand.brandID, category.categoryID)}
-                >
-                  <img
-                    src={brand.brandImageBase64 ? `data:image/png;base64,${brand.brandImageBase64}` : "/default-brand-image.png"}
-                    alt={brand.brandName}
-                    className="brand-image"
-                  />
-                  {brand.brandName}
-                </li>
-              ))}
+    return (
+        <nav className="categories-navbar">
+            <ul>
+                {categories.length === 0 ? (
+                    <li>No categories available</li>
+                ) : (
+                    categories.map((category) => (
+                        <li key={category.categoryID} className="category-item">
+                            <h3>{category.categoryName || "Unnamed Category"}</h3>
+                            <ul className="brands-list">
+                                {category.brands.length === 0 ? (
+                                    <li>No brands available</li>
+                                ) : (
+                                    category.brands.map((brand) => (
+                                        <li
+                                            key={`${category.categoryID}-${brand.brandID}`}
+                                            className={`brand-item ${selectedBrand?.brandID === brand.brandID ? "active" : ""}`}
+                                            onClick={() => onBrandClick(brand.brandID, category.categoryID)}
+                                        >
+                                            <img
+                                                src={
+                                                    brand.brandImageBase64
+                                                        ? `data:image/png;base64,${brand.brandImageBase64}`
+                                                        : "/default-brand-image.png"
+                                                }
+                                                alt={brand.brandName}
+                                                className="brand-image"
+                                            />
+                                            {brand.brandName || "Unnamed Brand"}
+                                        </li>
+                                    ))
+                                )}
+                            </ul>
+                        </li>
+                    ))
+                )}
             </ul>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
+        </nav>
+    );
 };
 
 const Products: React.FC = () => {
@@ -43,219 +100,290 @@ const Products: React.FC = () => {
     const [selectedBrand, setSelectedBrand] = useState<{ brandID: string; categoryID: string } | null>(null);
     const [products, setProducts] = useState<Product[] | null>(null);
     const [selectedProduct, setSelectedProduct] = useState<ProductDetails | null>(null);
-    const [productCache, setProductCache] = useState<{ [key: string]: ProductDetails }>({});
     const [editableProduct, setEditableProduct] = useState<ProductDetails | null>(null);
-    const [newProductImage, setNewProductImage] = useState<string | null>(null);
-    const [brands, setBrands] = useState([]);
-    const [productCategories, setCategory] = useState([]);
-    const [newProductImages, setNewProductImages] = useState<string[]>([]); // Store multiple images
-    const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+    const [newProductImages, setNewProductImages] = useState<string[]>([]);
+    const [brands, setBrands] = useState<Brand[]>([]);
+    const [productCategories, setProductCategories] = useState<SimpleCategory[]>([]);
+    const [mainImage, setMainImage] = useState<string | null>(null);
+    const [detailsError, setDetailsError] = useState<string | null>(null);
+    const [isPriceManuallyEdited, setIsPriceManuallyEdited] = useState<boolean>(false);
+    const [searchQuery, setSearchQuery] = useState<string>("");
 
-
-  useEffect(() => {
-    const fetchCategoriesWithBrands = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`${config.API_URL}/api/StockManager/categoriesBrands`);
-        if (!response.ok) throw new Error("Failed to fetch categories.");
-        const data = await response.json();
-        setCategories(data);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
+    const isFormValid = (): boolean => {
+        if (!editableProduct) return false;
+        return (
+            !!editableProduct.categoryID &&
+            !!editableProduct.brandID &&
+            !!editableProduct.productName?.trim()
+        );
     };
 
-    fetchCategoriesWithBrands();
-  }, []);
-
-  const fetchProductsByBrandAndCategory = async (brandID: string, categoryID: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(
-        `${config.API_URL}/api/StockManager/products-by-brand-and-category?brandId=${brandID}&categoryId=${categoryID}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch products.");
-      const data = await response.json();
-      setProducts(data);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-    const fetchProductDetails = async (productID: string) => {
+    const fetchCategoriesWithBrands = async () => {
         setLoading(true);
         setError(null);
         try {
-            const [productResponse, brandResponse, categoryResponse] = await Promise.all([
-                fetch(`${config.API_URL}/api/StockManager/GetProductDetails/${productID}`),
+            const response = await fetch(`${config.API_URL}/api/StockManager/categoriesBrands`);
+            if (!response.ok) throw new Error(`Failed to fetch categories: HTTP ${response.status}`);
+            const data = await response.json();
+            if (!Array.isArray(data)) throw new Error("Invalid categories data format.");
+            setCategories(data.map((item: any) => ({
+                categoryID: item.categoryID || item.CategoryID,
+                categoryName: item.categoryName || item.CategoryName,
+                brands: item.brands.map((brand: any) => ({
+                    brandID: brand.brandID || brand.BrandID,
+                    brandName: brand.brandName || brand.BrandName,
+                    brandImageBase64: brand.brandImageBase64 || brand.BrandImageBase64,
+                })),
+            })));
+        } catch (err: any) {
+            setError("Unable to load categories. Please try again.");
+            console.error("Error fetching categories:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchBrandsAndCategories = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const [brandResponse, categoryResponse] = await Promise.all([
                 fetch(`${config.API_URL}/api/StockManager/GetActiveBrands`),
-                fetch(`${config.API_URL}/api/StockManager/GetActiveCategories`)
+                fetch(`${config.API_URL}/api/StockManager/GetActiveCategories`),
             ]);
 
-            if (!productResponse.ok) throw new Error(`Failed to fetch product details. Status: ${productResponse.status}`);
-            if (!brandResponse.ok) throw new Error(`Failed to fetch brands. Status: ${brandResponse.status}`);
-            if (!categoryResponse.ok) throw new Error(`Failed to fetch categories. Status: ${categoryResponse.status}`);
+            if (!brandResponse.ok) throw new Error(`Failed to fetch brands: HTTP ${brandResponse.status}`);
+            if (!categoryResponse.ok) throw new Error(`Failed to fetch categories: HTTP ${categoryResponse.status}`);
 
-            const productData = await productResponse.json();
             const brandData = await brandResponse.json();
             const categoryData = await categoryResponse.json();
 
-            // Avoid unnecessary state updates for brands and categories
-            setBrands(prevBrands => (JSON.stringify(prevBrands) !== JSON.stringify(brandData) ? brandData : prevBrands));
-            setCategory(prevCategories => (JSON.stringify(prevCategories) !== JSON.stringify(categoryData) ? categoryData : prevCategories));
-
-            const selectedBrand = brandData.find((brand: any) => brand.brandName === productData.brandName);
-            const selectedCategory = categoryData.find((category: any) => category.categoryName === productData.categoryName);
-
-            const processedData = {
-                ...productData,
-                Images: Array.isArray(productData.Images) ? productData.Images.map((img: any) => ({
-                    ImageID: img?.ImageID || "",
-                    ImageData: img?.ImageData || "",
-                })) : [],
-                brandID: selectedBrand ? selectedBrand.brandID : productData.brandID,
-                brandName: selectedBrand ? selectedBrand.brandName : productData.brandName,
-                categoryID: selectedCategory ? selectedCategory.categoryID : productData.categoryID,
-                categoryName: selectedCategory ? selectedCategory.categoryName : productData.categoryName,
-            };
-
-            setProductCache(prevCache => ({ ...prevCache, [productID]: processedData }));
-            setSelectedProduct(processedData);
+            const mappedCategories = Array.isArray(categoryData)
+                ? categoryData.map((item: any) => ({
+                    categoryID: item.categoryID || item.CategoryID,
+                    categoryName: item.categoryName || item.CategoryName,
+                }))
+                : [];
+            setBrands(brandData.map((item: any) => ({
+                brandID: item.brandID || item.BrandID,
+                brandName: item.brandName || item.BrandName,
+            })));
+            setProductCategories(mappedCategories);
         } catch (err: any) {
-            setError(`Error fetching product details: ${err.message || "Unknown error"}`);
+            setError("Unable to load brands and categories. Please try again.");
+            console.error("Error fetching brands and categories:", err);
         } finally {
             setLoading(false);
         }
     };
 
-
-    useEffect(() => {
-        if (selectedProduct && brands.length > 0) {
-            const selectedBrand = brands.find(brand => brand.brandName === selectedProduct.brandName);
-
-            setEditableProduct(prevProduct => ({
-                ...prevProduct,
-                brandID: selectedBrand ? selectedBrand.brandID : selectedProduct.brandID,
-                brandName: selectedBrand ? selectedBrand.brandName : selectedProduct.brandName,
-            }));
-        }
-    }, [selectedProduct, brands]);
-
-    const fetchBrands = async () => {
+    const fetchProductsByBrandAndCategory = async (brandID: string, categoryID: string) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`${config.API_URL}/api/StockManager/GetActiveBrands`);
-            if (!response.ok) throw new Error(`Failed to fetch brands. Status: ${response.status}`);
-
-            const brandData = await response.json();
-
-            // Avoid unnecessary state updates
-            setBrands(prevBrands => (JSON.stringify(prevBrands) !== JSON.stringify(brandData) ? brandData : prevBrands));
+            const response = await fetch(
+                `${config.API_URL}/api/StockManager/products-by-brand-and-category?brandId=${brandID}&categoryId=${categoryID}`
+            );
+            if (!response.ok) throw new Error(`Failed to fetch products: HTTP ${response.status}`);
+            const data = await response.json();
+            if (!Array.isArray(data)) throw new Error("Invalid products data format.");
+            setProducts(data.map((item: any) => ({
+                productID: item.productID || item.ProductID,
+                productName: item.productName || item.ProductName || "Unnamed Product",
+                quantity: item.quantity || item.Quantity || 0,
+                images: item.images || item.Images || [],
+            })));
+            setSearchQuery(""); // Reset search query when fetching new products
         } catch (err: any) {
-            setError(`Error fetching brands: ${err.message || "Unknown error"}`);
+            setError("Unable to load products. Please try again.");
+            console.error("Error fetching products:", err);
         } finally {
             setLoading(false);
         }
     };
 
-    // Fetch brands only when adding a new product
     useEffect(() => {
-        fetchBrands();
+        fetchCategoriesWithBrands();
+        fetchBrandsAndCategories();
     }, []);
- // Initialize as an empty array
-    // Using useEffect to update editableProduct with correct category
-    useEffect(() => {
-        if (selectedProduct && productCategories.length > 0) {
-            const selectedCategory = productCategories.find(category => category.categoryName === selectedProduct.categoryName);
 
-            setEditableProduct(prevProduct => ({
-                ...prevProduct,
-                categoryID: selectedCategory ? selectedCategory.categoryID : selectedProduct.categoryID,
-                categoryName: selectedCategory ? selectedCategory.categoryName : selectedProduct.categoryName,
-            }));
+    useEffect(() => {
+        if (editableProduct?.productID && selectedProduct?.images?.length > 0) {
+            const firstImage = selectedProduct.images[0].imageData;
+            setMainImage(firstImage || null);
+        } else if (!editableProduct?.productID && newProductImages.length > 0) {
+            setMainImage(newProductImages[0]);
+        } else {
+            setMainImage(null);
         }
-    }, [selectedProduct, productCategories]);
+    }, [selectedProduct, newProductImages, editableProduct]);
 
+    const fetchProductDetails = async (productID: string) => {
+        if (!productID) {
+            setDetailsError("Invalid product ID.");
+            return;
+        }
 
-
-    useEffect(() => {
-        fetchCategories();
-    }, []);
-
-
-    const fetchCategories = async () => {
         setLoading(true);
-        setError(null);
+        setDetailsError(null);
         try {
-            const response = await fetch(`${config.API_URL}/api/StockManager/GetActiveCategories`);
-            if (!response.ok) throw new Error(`Failed to fetch categories. Status: ${response.status}`);
+            const response = await fetch(`${config.API_URL}/api/StockManager/GetProductDetails/${productID}`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch product details: ${response.status} ${response.statusText}`);
+            }
 
-            const categoryData = await response.json();
+            const productData = await response.json();
 
-            setCategory(prevCategories => (JSON.stringify(prevCategories) !== JSON.stringify(categoryData) ? categoryData : prevCategories));
-        } catch (err: any) {
-            setError(`Error fetching categories: ${err.message || "Unknown error"}`);
-        } finally {
-            setLoading(false);
-        }
-    };
+            if (!productData || productData.Error) {
+                throw new Error(productData.Error || "Product not found.");
+            }
 
-    // Fetch brands only when adding a new product
-    
+            const imagesArray = productData.images || productData.Images || [];
+            const processedImages = Array.isArray(imagesArray)
+                ? imagesArray.map((img: any) => ({
+                    imageID: img.imageID || img.ImageID || img.id || "",
+                    imageData: img.imageData || img.ImageData || img.data || "",
+                }))
+                : [];
 
-  const handleBrandClick = (brandID: string, categoryID: string) => {
-    setSelectedBrand({ brandID, categoryID });
-    fetchProductsByBrandAndCategory(brandID, categoryID);
-  };
+            let categoryID = productData.categoryID || productData.CategoryID || "";
+            let categoryName = productData.categoryName || productData.CategoryName || "";
 
-  const handleProductClick = (productID: string) => {
-      fetchProductDetails(productID);
-      
-  };
-
-    const closeOverlay = async (event: React.MouseEvent) => {
-        if ((event.target as HTMLElement).classList.contains("overlay")) {
-            setSelectedProduct(null); // Close the overlay
-           
-
-            // Refresh the products of the selected brand after closing the overlay
-            if (selectedBrand) {
-                try {
-                    await handleBrandClick(selectedBrand.brandID, selectedBrand.categoryID);
-                } catch (error) {
-                    console.error("Error fetching products:", error);
+            if (!categoryID || !productCategories.some((cat) => cat.categoryID === categoryID)) {
+                const matchingCategory = productCategories.find(
+                    (cat) => cat.categoryName === (productData.categoryName || productData.CategoryName)
+                );
+                if (matchingCategory) {
+                    categoryID = matchingCategory.categoryID;
+                    categoryName = matchingCategory.categoryName;
+                } else {
+                    console.warn(
+                        `No matching category found for product ${productID}. CategoryName: ${categoryName}, Available categories:`,
+                        productCategories
+                    );
+                    categoryID = "";
+                    categoryName = categoryName || "Unknown";
                 }
             }
+
+            const processedData: ProductDetails = {
+                productID: productData.productID || productData.ProductID || null,
+                productName: productData.productName || productData.ProductName || null,
+                categoryID,
+                categoryName,
+                brandID: productData.brandID || productData.BrandID || "",
+                brandName: productData.brandName || productData.BrandName || "",
+                description: productData.description || productData.Description || null,
+                height: productData.height === 0 ? null : productData.height ?? null,
+                width: productData.width === 0 ? null : productData.width ?? null,
+                depth: productData.depth === 0 ? null : productData.depth ?? null,
+                pricePerMsq: productData.pricePerMsq === 0 ? null : productData.pricePerMsq ?? null,
+                price: productData.price === 0 ? null : productData.price ?? null,
+                currency: productData.currency || productData.Currency || null,
+                sqmPerBox: productData.sqmPerBox === 0 ? null : productData.sqmPerBox ?? null,
+                qtyPerBox: productData.qtyPerBox === 0 ? null : productData.qtyPerBox ?? null,
+                quantity: productData.quantity === 0 ? null : productData.quantity ?? null,
+                available: productData.available || productData.Available || false,
+                images: processedImages,
+            };
+
+            setSelectedProduct(processedData);
+            setEditableProduct(processedData);
+            setDetailsError(null);
+        } catch (err: any) {
+            console.error("Error fetching product details:", err);
+            setDetailsError("Failed to load product details. Please try again.");
+        } finally {
+            setLoading(false);
         }
     };
 
+    const handleBrandClick = (brandID: string, categoryID: string) => {
+        setSelectedBrand({ brandID, categoryID });
+        fetchProductsByBrandAndCategory(brandID, categoryID);
+    };
 
+    const handleProductClick = (productID: string) => {
+        fetchProductDetails(productID);
+        setIsPriceManuallyEdited(false);
+    };
 
+    const handleCloseOverlay = () => {
+        setSelectedProduct(null);
+        setEditableProduct(null);
+        setNewProductImages([]);
+        setMainImage(null);
+        setDetailsError(null);
+        setIsPriceManuallyEdited(false);
+    };
 
-  useEffect(() => {
-      setEditableProduct(selectedProduct);
-  }, [selectedProduct]);
+    const formatNumber = (value: number | null | undefined): string => {
+        if (value === null || value === undefined) return "";
+        return String(value);
+    };
 
-    const handleInputChange = (field: keyof ProductDetails, value: any) => {
+    const parseFloatValue = (value: string): number | null => {
+        if (value === "") return null;
+        const cleanValue = value.replace(/,/g, "");
+        const num = parseFloat(cleanValue);
+        return isNaN(num) ? null : num;
+    };
+
+    const parseIntValue = (value: string): number | null => {
+        if (value === "") return null;
+        const cleanValue = value.replace(/,/g, "");
+        const num = parseInt(cleanValue, 10);
+        return isNaN(num) ? null : num;
+    };
+
+    const calculatePrice = (pricePerMsq: number | null, sqmPerBox: number | null): number | null => {
+        if (pricePerMsq === null || sqmPerBox === null) return null;
+        const price = Number(pricePerMsq) * Number(sqmPerBox);
+        return isNaN(price) ? null : price;
+    };
+
+    const handleInputChange = (field: keyof ProductDetails, value: string) => {
         setEditableProduct((prev) => {
             if (!prev) return null;
 
-            const parsedValue =
-                value === "" ? "" : ["height", "width", "depth", "pricePerMsq", "price", "sqmPerBox", "qtyPerBox", "quantity"].includes(field)
-                    ? Number(value)
-                    : value;
+            let parsedValue: any = value;
 
-            return { ...prev, [field]: parsedValue };
+            const intFields: (keyof ProductDetails)[] = ["height", "width", "depth", "qtyPerBox", "quantity"];
+            const floatFields: (keyof ProductDetails)[] = ["pricePerMsq", "price", "sqmPerBox"];
+            const stringFields: (keyof ProductDetails)[] = ["productName", "description", "currency"];
+
+            if (intFields.includes(field)) {
+                parsedValue = parseIntValue(value);
+                if (parsedValue === null && value !== "") {
+                    alert(`Invalid input for ${field}. Please enter a valid integer.`);
+                    return prev;
+                }
+            } else if (floatFields.includes(field)) {
+                parsedValue = parseFloatValue(value);
+                if (parsedValue === null && value !== "") {
+                    alert(`Invalid input for ${field}. Please enter a valid number.`);
+                    return prev;
+                }
+            } else if (stringFields.includes(field)) {
+                parsedValue = value === "" ? null : value;
+            } else {
+                parsedValue = value === "" ? null : value;
+            }
+
+            if (field === "price") {
+                setIsPriceManuallyEdited(true);
+            }
+
+            const updatedProduct = { ...prev, [field]: parsedValue };
+
+            if (!isPriceManuallyEdited && (field === "pricePerMsq" || field === "sqmPerBox")) {
+                const newPrice = calculatePrice(updatedProduct.pricePerMsq, updatedProduct.sqmPerBox);
+                updatedProduct.price = newPrice;
+            }
+
+            return updatedProduct;
         });
     };
-
 
     const handleToggle = (field: keyof ProductDetails) => {
         setEditableProduct((prev) => (prev ? { ...prev, [field]: !prev[field] } : null));
@@ -264,189 +392,180 @@ const Products: React.FC = () => {
     const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) {
-            console.error("No file selected.");
+            alert("No file selected.");
+            return;
+        }
+        if (!file.type.startsWith("image/")) {
+            alert("Please upload an image file.");
+            return;
+        }
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSize) {
+            alert("Image size exceeds 5MB.");
             return;
         }
 
         const reader = new FileReader();
         reader.onloadend = async () => {
-            const base64StringFull = reader.result?.toString(); // Full base64 data URL
-            const base64StringRaw = base64StringFull?.split(",")[1]; // Extract the raw base64 part
+            const base64StringFull = reader.result?.toString();
+            const base64StringRaw = base64StringFull?.split(",")[1];
 
-            if (!base64StringFull) {
-                console.error("Failed to convert image to Base64.");
+            if (!base64StringRaw) {
+                alert("Failed to convert image to Base64.");
                 return;
             }
 
             if (editableProduct?.productID) {
-                // EXISTING PRODUCT: upload directly to server
                 const payload = {
                     ProductID: editableProduct.productID,
-                    Base64Image: base64StringRaw, // Send only the raw base64 string
+                    Base64Image: base64StringRaw,
                 };
 
                 try {
                     const response = await fetch(`${config.API_URL}/api/StockManager/AddImages`, {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(payload),
                     });
 
                     if (!response.ok) {
-                        const errorData = await response.json();
-                        console.error("Error uploading image:", errorData);
-                        alert("Failed to upload image: " + (errorData.message || "Unknown error"));
-                        return;
+                        const errorText = await response.text();
+                        throw new Error(errorText || "Failed to upload image");
                     }
 
-                    const imageDataFromServer = await response.json(); // Expected: { encryptedImageID: "..." }
-                    console.log("Image uploaded successfully:", imageDataFromServer);
-
-                    // Update product with uploaded image using the same structure
-                    setEditableProduct((prevProduct) => ({
-                        ...prevProduct!,
+                    const imageDataFromServer = await response.json();
+                    setEditableProduct((prev) => ({
+                        ...prev!,
                         images: [
-                            ...(prevProduct?.images || []),
+                            ...(prev?.images || []),
                             {
                                 imageID: imageDataFromServer.encryptedImageID,
-                                imageBase64: base64StringRaw, // Store the raw base64 string
+                                imageData: base64StringRaw,
                             },
                         ],
                     }));
-                } catch (error) {
-                    console.error("Error in image upload:", error);
-                    alert("An error occurred while uploading the image.");
+                    setNewProductImages((prev) => [...prev, base64StringRaw]);
+                    await fetchProductDetails(editableProduct.productID!);
+                } catch (error: any) {
+                    alert(`Failed to upload image: ${error.message}`);
                 }
             } else {
-                // NEW PRODUCT: store full data URL (consistent with how it's used here)
-                setNewProductImages((prevImages) => [...prevImages, base64StringFull]);
-                console.log("New product image stored locally and UI updated.");
+                setNewProductImages((prev) => [...prev, base64StringRaw]);
             }
         };
 
         reader.readAsDataURL(file);
     };
 
-
-
-
-
-    const handleDeleteImage = (img: any, isNewProduct: boolean) => {
+    const handleDeleteImage = async (img: string | { imageID: string; imageData: string }, isNewProduct: boolean) => {
         if (isNewProduct) {
-            // For new product image (base64 string)
-            setNewProductImages((prevImages) =>
-                prevImages.filter((image) => image !== img)  // Remove the base64 string
-            );
+            setNewProductImages((prev) => prev.filter((image) => image !== img));
         } else {
-            // For existing product image (image object with imageID)
-            if (img.imageID) {
-                fetch(`${config.API_URL}/api/StockManager/DeleteImage/${img.imageID}`, {
+            const imageObj = img as { imageID: string; imageData: string };
+            if (!imageObj.imageID) {
+                alert("Cannot delete image: No image ID provided.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${config.API_URL}/api/Stockcreated by xAI. Manager/DeleteImage/${imageObj.imageID}`, {
                     method: "DELETE",
-                })
-                    .then((response) => {
-                        if (!response.ok) {
-                            return response.json().then((errorData) => {
-                                throw new Error(errorData.message);
-                            });
-                        }
-                        // Optionally update state after deleting the image
-                        setEditableProduct((prevProduct) => ({
-                            ...prevProduct,
-                            images: prevProduct?.images?.filter((image) => image.imageID !== img.imageID),
-                        }));
-                    })
-                    .catch((error) => {
-                        console.error("Error deleting image:", error);
-                        alert("An error occurred while deleting the image.");
-                    });
-            } else {
-                console.error("No imageID found for existing product image.");
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || "Failed to delete image");
+                }
+
+                setEditableProduct((prev) => ({
+                    ...prev!,
+                    images: prev?.images?.filter((image) => image.imageID !== imageObj.imageID) || [],
+                }));
+                if (editableProduct?.productID) {
+                    await fetchProductDetails(editableProduct.productID);
+                }
+            } catch (error: any) {
+                alert(`Failed to delete image: ${error.message}`);
             }
         }
     };
-
-
-
-
-
-
-
-
-
-
-    const [mainImage, setMainImage] = useState<string | null>(null);
-
-    useEffect(() => {
-        // Reset the main image when a new product is selected
-        if (selectedProduct?.images?.length > 0) {
-            setMainImage(selectedProduct.images[0].imageData);  // Set the first image as the main image
-        } else {
-            setMainImage(null);  // Reset if no images available
-        }
-    }, [selectedProduct]);  // Trigger whenever the selectedProduct changes
-
 
     const handleThumbnailClick = (imageData: string) => {
         setMainImage(imageData);
     };
 
-
-   
-
-
-
-
-
-    const handleBrandChange = (e) => {
-        const selectedBrandID = e.target.value;
-        const selectedBrand = brands.find(brand => brand.brandID === selectedBrandID);
-
-        setEditableProduct(prev => ({
-            ...prev,
-            brandID: selectedBrandID,
-            brandName: selectedBrand ? selectedBrand.brandName : "", // Update name when brand is selected
+    const handleBrandChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const brandID = e.target.value;
+        const selectedBrand = brands.find((brand) => brand.brandID === brandID);
+        setEditableProduct((prev) => ({
+            ...prev!,
+            brandID,
+            brandName: selectedBrand?.brandName || "",
         }));
     };
 
-    const handleCategoryChange = (e) => {
-        const selectedCategoryID = e.target.value;
-        const selectedCategory = categories.find(category => category.categoryID === selectedCategoryID);
-
-        setEditableProduct(prev => ({
-            ...prev,
-            categoryID: selectedCategoryID,
-            categoryName: selectedCategory ? selectedCategory.categoryName : "", // Update name when brand is selected
-        }));
+    const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const categoryID = e.target.value;
+        const selectedCategory = productCategories.find((category) => category.categoryID === categoryID);
+        if (selectedCategory) {
+            setEditableProduct((prev) => ({
+                ...prev!,
+                categoryID: selectedCategory.categoryID,
+                categoryName: selectedCategory.categoryName,
+            }));
+        } else {
+            setEditableProduct((prev) => ({
+                ...prev!,
+                categoryID: "",
+                categoryName: "",
+            }));
+            alert("Please select a valid category.");
+        }
     };
-
-
 
     const handleSave = async () => {
+        if (!editableProduct) {
+            alert("No product data to save.");
+            return;
+        }
+
+        const validationErrors: string[] = [];
+        if (!editableProduct.productName?.trim()) {
+            validationErrors.push("Please enter a product name.");
+        }
+        if (!editableProduct.categoryID) {
+            validationErrors.push("Please select a Category.");
+        }
+        if (!editableProduct.brandID) {
+            validationErrors.push("Please select a Brand.");
+        }
+
+        if (validationErrors.length > 0) {
+            alert(validationErrors.join("\n"));
+            return;
+        }
+
         setLoading(true);
 
         const requestBody = {
             data: {
-                productID: editableProduct?.productID || null,
-                productName: editableProduct?.productName || "",
-                categoryID: editableProduct?.categoryID || null,
-                brandID: editableProduct?.brandID || null,
-                description: editableProduct?.description || "",
-                height: editableProduct?.height ?? null,
-                width: editableProduct?.width ?? null,
-                depth: editableProduct?.depth ?? null,
-                pricePerMsq: editableProduct?.pricePerMsq ?? null,
-                price: editableProduct?.price ?? null,
-                currency: editableProduct?.currency || "",
-                sqmPerBox: editableProduct?.sqmPerBox ?? null,
-                qtyPerBox: editableProduct?.qtyPerBox ?? null,
-                quantity: editableProduct?.quantity ?? null,
-                available: editableProduct?.available ?? false,
-                imageData: editableProduct?.productID
-                    ? newProductImages // Only send newly uploaded images for existing products
-                    : newProductImages || [], // Send all for new products
-            }
+                productID: editableProduct.productID || null,
+                productName: editableProduct.productName || null,
+                categoryID: editableProduct.categoryID || null,
+                brandID: editableProduct.brandID || null,
+                description: editableProduct.description || null,
+                height: editableProduct.height ?? null,
+                width: editableProduct.width ?? null,
+                depth: editableProduct.depth ?? null,
+                pricePerMsq: editableProduct.pricePerMsq ?? null,
+                price: editableProduct.price ?? null,
+                currency: editableProduct.currency || "USD",
+                sqmPerBox: editableProduct.sqmPerBox ?? null,
+                qtyPerBox: editableProduct.qtyPerBox ?? null,
+                quantity: editableProduct.quantity ?? null,
+                available: editableProduct.available ?? false,
+                imageData: editableProduct.productID ? [] : newProductImages,
+            },
         };
 
         try {
@@ -456,303 +575,404 @@ const Products: React.FC = () => {
                 body: JSON.stringify(requestBody),
             });
 
-            if (!response.ok) throw new Error("Failed to save product.");
+            const responseText = await response.text();
 
-            console.log("Product saved successfully!");
-
-            // Clear newly uploaded images after saving
-            setNewProductImages([]);
-
-            // Optionally, refresh product details or the product list
-            if (editableProduct?.productID) {
-                fetchProductDetails(editableProduct.productID); // Refresh details
-            } else if (selectedBrand) {
-                handleBrandClick(selectedBrand.brandID, selectedBrand.categoryID); // Refresh list
+            if (!response.ok) {
+                throw new Error(responseText || `Failed to save product: HTTP ${response.status}`);
             }
 
-        } catch (error) {
+            if (responseText !== "Product added/updated successfully.") {
+                throw new Error(`Unexpected response: ${responseText}`);
+            }
+
+            setNewProductImages([]);
+            setMainImage(null);
+            setIsPriceManuallyEdited(false);
+
+            if (editableProduct.productID) {
+                await fetchProductDetails(editableProduct.productID);
+            } else {
+                setEditableProduct(null);
+                setSelectedProduct(null);
+            }
+
+            await fetchCategoriesWithBrands();
+            await fetchBrandsAndCategories();
+            if (selectedBrand) {
+                await handleBrandClick(selectedBrand.brandID, selectedBrand.categoryID);
+            }
+        } catch (error: any) {
             console.error("Error saving product:", error);
-            alert("Failed to save product.");
+            alert(`Failed to save product: ${error.message}`);
         } finally {
             setLoading(false);
         }
-    };  
+    };
 
+    // Filter products based on search query
+    const filteredProducts = products?.filter((product) =>
+        product.productName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
-
-
- 
-  
-  return (
-      <div className="products-container">
-          <Categories categories={categories} selectedBrand={selectedBrand} onBrandClick={handleBrandClick} />
-          <div className="add-product-button-container">
-              <button onClick={() => setSelectedProduct({})} className="add-product-button">
-                  Add New Product
-              </button>
-          </div>
-
-
-          <div className="products-grid">
-              {/* Button to Add a New Product */}
-             
-
-              {error && <p className="error">{error}</p>}
-              {!selectedBrand && <p>Select a brand to view products.</p>}
-              {products && products.length === 0 && <p>No products available for this brand and category.</p>}
-              {products?.map((product) => (
-                  <div key={product.productID} className="product-card" onClick={() => handleProductClick(product.productID)}>
-                      <img
-                          src={product.images?.length > 0 ? `data:image/png;base64,${product.images[0]}` : "/placeholder.png"}
-                          alt={product.productName}
-                          className="product-image"
-                      />
-                      <h4 className="product-name">{product.productName}</h4>
-                      <p className="product-quantity">Quantity: {product.quantity}</p>
-                  </div>
-              ))}
-          </div>
-
-          {selectedProduct && (
-              <div className="overlay" onClick={closeOverlay}>
-                  <div className="overlay-content" onClick={(e) => e.stopPropagation()}>
-                      <button className="close-button" onClick={() => setSelectedProduct(null)}>
-                          X
-                      </button>
-
-                      <div className="overlay-left">
-                          <div className="overlay-images">
-                              {/* Main Image */}
-                              <img
-                                  src={mainImage ? `data:image/png;base64,${mainImage}` : "/placeholder.png"}
-                                  alt="Main"
-                                  className="main-image"
-                              />
-
-                              <div className="thumbnails-grid">
-                                  {newProductImages && !editableProduct?.productID &&
-                                      newProductImages.map((imgBase64, index) => (
-                                          <div key={index} className="thumbnail-wrapper">
-                                              <img
-                                                  src={`data:image/png;base64,${imgBase64}`}
-                                                  onClick={() => handleThumbnailClick(imgBase64)}  // Handle thumbnail click for new product
-                                                  className="thumbnail"
-                                              />
-                                              <button
-                                                  className="delete-button"
-                                                  onClick={() => handleDeleteImage(imgBase64, true)} // Pass true for new product
-                                              >
-                                                  ✖
-                                              </button>
-                                          </div>
-                                      ))
-                                  }
-
-                                  {editableProduct?.images?.length > 0 &&
-                                      editableProduct.images.map((img, index) => (
-                                          <div key={index} className="thumbnail-wrapper">
-                                              <img
-                                                  src={img.imageData ? `data:image/png;base64,${img.imageData}` : "/placeholder.png"}
-                                                  alt={`Existing product image ${index}`}
-                                                  onClick={() => handleThumbnailClick(img.imageData)}  // Handle thumbnail click for existing product
-                                                  className="thumbnail"
-                                              />
-                                              <button
-                                                  className="delete-button"
-                                                  onClick={() => handleDeleteImage(img, false)} // Pass false for existing product
-                                              >
-                                                  ✖
-                                              </button>
-                                          </div>
-                                      ))}
-                              
-
-
-                                  {/* Upload Box */}
-                                  <label className="upload-box">
-                                      <input
-                                          type="file"
-                                          accept="image/*"
-                                          onChange={(event) => handleImageUpload(event)}
-                                      />
-                                      <span>+</span>
-                                  </label>
-                              </div>
-                          </div>
-                      </div>        
-
-
-                     
-
-
-                      <div className="overlay-right">
-                          {/* Editable Product Name with Full Width */}
-                          <label><strong>Name::</strong></label> 
-                          <input
-                              type="text"
-                              id="product-name"
-                              value={editableProduct?.productName || ""}
-                              onChange={(e) =>
-                                  setEditableProduct((prev) => ({ ...prev, productName: e.target.value }))
-                              }
-                              className="full-width-input"
-                          />
-                          
-                          {/* Info Grid with 2 Columns */}
-                          <div className="info-grid">
-                              {/* Category and Brand Side by Side */}
-                              <div className="grid-item">
-                                  <label><strong>Category:</strong></label>
-                                  <select value={categories.find(category => category.categoryName.trim() === editableProduct?.categoryName?.trim())?.categoryID || ''} onChange={handleCategoryChange} className="full-width-input">
-                                      <option value="" disabled>Select a Category</option>
-                                      {categories.map((category) => (
-                                          <option key={category.categoryID} value={category.categoryID}>
-                                              {category.categoryName}
-                                          </option>
-                                      ))}
-                                  </select>
-                              </div>
-                              <div className="grid-item">
-                                  <label><strong>Brand:</strong></label>
-                                  <select value={brands.find(brand => brand.brandName.trim() === editableProduct?.brandName?.trim())?.brandID || ''} onChange={handleBrandChange} className="full-width-input">
-                                      <option value="" disabled>Select a Brand</option>
-                                      {brands.map((brand) => (
-                                          <option key={brand.brandID} value={brand.brandID}>
-                                              {brand.brandName}
-                                          </option>
-                                      ))}
-                                  </select>
-
-                              </div>
-
-
-                              {/* Description with Full Width */}
-                              <div className="grid-item full-width">
-                                  <label><strong>Description:</strong></label>
-                                  <textarea
-                                      value={editableProduct?.description || ""}
-                                      onChange={(e) => handleInputChange("description", e.target.value)}
-                                      className="full-width-input"
-                                  />
-                              </div>
-                               <div className="grid-item">
-                                  <label><strong>Height:</strong></label>
-                                  <input
-                                      type="text"
-                                      value={editableProduct?.height || ""}
-                                      onChange={(e) => handleInputChange("height", e.target.value)}
-                                      className="full-width-input"
-                                  />
-                              </div>
-
-                              <div className="grid-item">
-                                  <label><strong>Width:</strong></label>
-                                  <input
-                                      type="text"
-                                      value={editableProduct?.width || ""}
-                                      onChange={(e) => handleInputChange("width", e.target.value)}
-                                      className="full-width-input"
-                                  />
-                              </div>
-
-                              <div className="grid-item">
-                                  <label><strong>Depth:</strong></label>
-                                  <input
-                                      type="text"
-                                      value={editableProduct?.depth || ""}
-                                      onChange={(e) => handleInputChange("depth", e.target.value)}
-                                      className="full-width-input"
-                                  />
-                              </div>
-                              {/* Price per m² and Sqm per box Side by Side */}
-                              <div className="grid-item">
-                                  <label><strong>Price per m²:</strong></label>
-                                  <input
-                                      type="text"
-                                      value={editableProduct?.pricePerMsq || ""}
-                                      onChange={(e) => handleInputChange("pricePerMsq", e.target.value)}
-                                      className="full-width-input"
-                                  />
-                                  </div>
-
-                                  <div className="grid-item">
-                                  <label><strong>Price:</strong></label>
-                                  <input
-                                      type="text"
-                                      value={editableProduct?.price || ""}
-                                      onChange={(e) => handleInputChange("price", e.target.value)}
-                                      className="full-width-input"
-                                  />
-                              </div>
-
-                              <div className="grid-item">
-                                  <label><strong>Currency:</strong></label>
-                                  <input
-                                      type="text"
-                                      value={editableProduct?.currency || ""}
-                                      onChange={(e) => handleInputChange("currency", e.target.value)}
-                                      className="full-width-input"
-                                  />
-                              </div>
-                              <div className="grid-item">
-                                  <label><strong>Sqm per box:</strong></label>
-                                  <input
-                                      type="text"
-                                      value={editableProduct?.sqmPerBox || ""}
-                                      onChange={(e) => handleInputChange("sqmPerBox", e.target.value)}
-                                      className="full-width-input"
-                                  />
-                              </div>
-
-                              {/* Quantity per box and Quantity Side by Side */}
-                              <div className="grid-item">
-                                  <label><strong>Qty per box:</strong></label>
-                                  <input
-                                      type="text"
-                                      value={editableProduct?.qtyPerBox || ""}
-                                      onChange={(e) => handleInputChange("qtyPerBox", e.target.value)}
-                                      className="full-width-input"
-                                  />
-                              </div>
-                              <div className="grid-item">
-                                  <label><strong>Quantity:</strong></label>
-                                  <input
-                                      type="text"
-                                      value={editableProduct?.quantity || ""}
-                                      onChange={(e) => handleInputChange("quantity", e.target.value)}
-                                      className="full-width-input"
-                                  />
-                              </div>
-
-                             
-
-                              {/* Available Toggle Switch with Full Width */}
-                              <div className="grid-item toggle-container">
-                                  <label className="toggle-label"><strong>Available:</strong></label>
-                                  <div className="toggle-switch">
-                                      <input
-                                          type="checkbox"
-                                          checked={editableProduct?.available === true}
-                                          onChange={() => handleToggle("available")}
-                                      />
-
-                                      <span className="slider"></span>
-                                  </div>
-                              </div>
-                          </div>
-
-                          {/* Save Button at Bottom with Full Width */}
-                          <div className="save-button-container">
-                              <button className="save-button" onClick={handleSave}>
-                                  {selectedProduct?.productID ? "Save Changes" : "Add Product"}
-                              </button>
-                          </div>
+    return (
+        <div className="products-container">
+            <Categories categories={categories} selectedBrand={selectedBrand} onBrandClick={handleBrandClick} />
+            <div className="add-product-button-container">
+                {selectedBrand && (
+                    <input
+                        type="text"
+                        placeholder="Search products..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="search-bar"
+                    />
+                )}
+                <button
+                    onClick={() => {
+                        if (productCategories.length === 0) {
+                            alert("Cannot add product: No categories available.");
+                            return;
+                        }
+                        setEditableProduct({
+                            productID: null,
+                            productName: null,
+                            categoryID: "",
+                            categoryName: "",
+                            brandID: "",
+                            brandName: "",
+                            description: null,
+                            height: null,
+                            width: null,
+                            depth: null,
+                            pricePerMsq: null,
+                            price: null,
+                            currency: null,
+                            sqmPerBox: null,
+                            qtyPerBox: null,
+                            quantity: null,
+                            available: false,
+                            images: [],
+                        });
+                        setSelectedProduct(null);
+                        setNewProductImages([]);
+                        setMainImage(null);
+                        setDetailsError(null);
+                        setIsPriceManuallyEdited(false);
+                    }}
+                    className="add-product-button"
+                >
+                    Add New Product
+                </button>
             </div>
-          </div>
+
+            <div className="products-grid">
+                {loading && <p>Loading...</p>}
+                {error && (
+                    <div className="error-container">
+                        <p className="error">{error}</p>
+                        {selectedBrand && (
+                            <button
+                                onClick={() => handleBrandClick(selectedBrand.brandID, selectedBrand.categoryID)}
+                                className="retry-button"
+                            >
+                                Retry
+                            </button>
+                        )}
+                    </div>
+                )}
+                {!selectedBrand && <p>Select a brand to view products.</p>}
+                {filteredProducts && filteredProducts.length === 0 && <p>No products match your search.</p>}
+                {filteredProducts?.map((product) => (
+                    <div
+                        key={product.productID}
+                        className="product-card"
+                        onClick={() => handleProductClick(product.productID)}
+                    >
+                        <img
+                            src={product.images?.length > 0 ? `data:image/png;base64,${product.images[0]}` : "/placeholder.png"}
+                            alt={product.productName}
+                            className="product-image"
+                        />
+                        <h4 className="product-name">{product.productName}</h4>
+                        <p className="product-quantity">Quantity: {product.quantity}</p>
+                    </div>
+                ))}
+            </div>
+
+            {editableProduct && (
+                <div className="overlay" onClick={handleCloseOverlay}>
+                    <div className="overlay-content" onClick={(e) => e.stopPropagation()}>
+                        <button className="close-button" onClick={handleCloseOverlay}>X</button>
+
+                        {loading && <p className="loading">Loading product details...</p>}
+                        {detailsError && (
+                            <div className="error-container">
+                                <p className="error">{detailsError}</p>
+                                {editableProduct.productID && (
+                                    <button
+                                        onClick={() => fetchProductDetails(editableProduct.productID!)}
+                                        className="retry-button"
+                                    >
+                                        Retry
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="overlay-left">
+                            <div className="overlay-images">
+                                <img
+                                    src={mainImage ? `data:image/png;base64,${mainImage}` : "/placeholder.png"}
+                                    alt="Main"
+                                    className="main-image"
+                                />
+                                <div className="thumbnails-grid">
+                                    {newProductImages && !editableProduct?.productID &&
+                                        newProductImages.map((imgBase64, index) => (
+                                            <div key={index} className="thumbnail-wrapper">
+                                                <img
+                                                    src={`data:image/png;base64,${imgBase64}`}
+                                                    onClick={() => handleThumbnailClick(imgBase64)}
+                                                    className="thumbnail"
+                                                />
+                                                <button
+                                                    className="delete-button"
+                                                    onClick={() => handleDeleteImage(imgBase64, true)}
+                                                >
+                                                    ✖
+                                                </button>
+                                            </div>
+                                        ))}
+                                    {editableProduct?.images?.length > 0 &&
+                                        editableProduct.images.map((img, index) => (
+                                            <div key={index} className="thumbnail-wrapper">
+                                                <img
+                                                    src={
+                                                        img.imageData
+                                                            ? `data:image/png;base64,${img.imageData}`
+                                                            : "/placeholder.png"
+                                                    }
+                                                    onClick={() => handleThumbnailClick(img.imageData)}
+                                                    className="thumbnail"
+                                                />
+                                                <button
+                                                    className="delete-button"
+                                                    onClick={() => handleDeleteImage(img, false)}
+                                                >
+                                                    ✖
+                                                </button>
+                                            </div>
+                                        ))}
+                                    <label className="upload-box">
+                                        <input type="file" accept="image/*" onChange={handleImageUpload} />
+                                        <span>+</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="overlay-right">
+                            <label>
+                                <strong>Name:</strong><span className="required-star">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={editableProduct?.productName ?? ""}
+                                onChange={(e) => handleInputChange("productName", e.target.value)}
+                                className={`full-width-input ${!editableProduct?.productName?.trim() ? "invalid" : ""}`}
+                            />
+
+                            <div className="info-grid">
+                                <div className="grid-item">
+                                    <label>
+                                        <strong>Category:</strong><span className="required-star">*</span>
+                                    </label>
+                                    <select
+                                        value={editableProduct?.categoryID || ""}
+                                        onChange={handleCategoryChange}
+                                        className={`full-width-input ${!editableProduct?.categoryID ? "invalid" : ""}`}
+                                    >
+                                        <option value="" disabled>
+                                            Select a category
+                                        </option>
+                                        {productCategories.length === 0 ? (
+                                            <option value="" disabled>
+                                                No categories available
+                                            </option>
+                                        ) : (
+                                            productCategories.map((category) => (
+                                                <option key={category.categoryID} value={category.categoryID}>
+                                                    {category.categoryName}
+                                                </option>
+                                            ))
+                                        )}
+                                    </select>
+                                </div>
+
+                                <div className="grid-item">
+                                    <label>
+                                        <strong>Brand:</strong><span className="required-star">*</span>
+                                    </label>
+                                    <select
+                                        value={editableProduct?.brandID || ""}
+                                        onChange={handleBrandChange}
+                                        className={`full-width-input ${!editableProduct?.brandID ? "invalid" : ""}`}
+                                    >
+                                        <option value="" disabled>
+                                            Select a Brand
+                                        </option>
+                                        {brands.length === 0 ? (
+                                            <option value="" disabled>
+                                                No brands available
+                                            </option>
+                                        ) : (
+                                            brands.map((brand) => (
+                                                <option key={brand.brandID} value={brand.brandID}>
+                                                    {brand.brandName}
+                                                </option>
+                                            ))
+                                        )}
+                                    </select>
+                                </div>
+                                <div className="grid-item full-width">
+                                    <label>
+                                        <strong>Description:</strong>
+                                    </label>
+                                    <textarea
+                                        value={editableProduct?.description ?? ""}
+                                        onChange={(e) => handleInputChange("description", e.target.value)}
+                                        className="full-width-input"
+                                    />
+                                </div>
+                                <div className="grid-item">
+                                    <label>
+                                        <strong>Height(cm):</strong>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formatNumber(editableProduct?.height)}
+                                        onChange={(e) => handleInputChange("height", e.target.value)}
+                                        className="full-width-input no-arrows"
+                                    />
+                                </div>
+                                <div className="grid-item">
+                                    <label>
+                                        <strong>Width(cm):</strong>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formatNumber(editableProduct?.width)}
+                                        onChange={(e) => handleInputChange("width", e.target.value)}
+                                        className="full-width-input no-arrows"
+                                    />
+                                </div>
+                                <div className="grid-item">
+                                    <label>
+                                        <strong>Depth:</strong>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formatNumber(editableProduct?.depth)}
+                                        onChange={(e) => handleInputChange("depth", e.target.value)}
+                                        className="full-width-input no-arrows"
+                                    />
+                                </div>
+                                <div className="grid-item">
+                                    <label>
+                                        <strong>Price per m²:</strong>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formatNumber(editableProduct?.pricePerMsq)}
+                                        onChange={(e) => handleInputChange("pricePerMsq", e.target.value)}
+                                        className="full-width-input no-arrows"
+                                    />
+                                </div>
+                                <div className="grid-item">
+                                    <label>
+                                        <strong>m² per box:</strong>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formatNumber(editableProduct?.sqmPerBox)}
+                                        onChange={(e) => handleInputChange("sqmPerBox", e.target.value)}
+                                        className="full-width-input no-arrows"
+                                    />
+                                </div>
+                                <div className="grid-item">
+                                    <label>
+                                        <strong>Qty per box:</strong>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formatNumber(editableProduct?.qtyPerBox)}
+                                        onChange={(e) => handleInputChange("qtyPerBox", e.target.value)}
+                                        className="full-width-input no-arrows"
+                                    />
+                                </div>
+                                <div className="grid-item">
+                                    <label>
+                                        <strong>Price:</strong>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formatNumber(editableProduct?.price)}
+                                        onChange={(e) => handleInputChange("price", e.target.value)}
+                                        className="full-width-input no-arrows"
+                                    />
+                                </div>
+                                <div className="grid-item">
+                                    <label>
+                                        <strong>Currency:</strong>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editableProduct?.currency || ""}
+                                        onChange={(e) => handleInputChange("currency", e.target.value)}
+                                        className="full-width-input"
+                                    />
+                                </div>
+                                <div className="grid-item">
+                                    <label>
+                                        <strong>Quantity:</strong>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formatNumber(editableProduct?.quantity)}
+                                        onChange={(e) => handleInputChange("quantity", e.target.value)}
+                                        className="full-width-input no-arrows"
+                                    />
+                                </div>
+                                <div className="grid-item toggle-container">
+                                    <label className="toggle-label">
+                                        <strong>Available:</strong>
+                                    </label>
+                                    <div className="toggle-switch">
+                                        <input
+                                            type="checkbox"
+                                            checked={editableProduct?.available === true}
+                                            onChange={() => handleToggle("available")}
+                                        />
+                                        <span className="slider"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="save-button-container">
+                                <button
+                                    className="save-button"
+                                    onClick={handleSave}
+                                    disabled={loading || !isFormValid()}
+                                >
+                                    {loading ? "Saving..." : editableProduct?.productID ? "Save Changes" : "Add Product"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default Products;

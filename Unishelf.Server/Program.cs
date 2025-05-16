@@ -8,6 +8,8 @@ using Microsoft.IdentityModel.Tokens;
 using Unishelf.Server.Services.Users;
 using Unishelf.Server.Services.Products;
 using Unishelf.Server.Services.Dashboard;
+using Unishelf.Server.Migrations;
+using Unishelf.Server.Services.Cart;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -33,6 +35,7 @@ builder.Services.AddSingleton<EncryptionHelper>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ProductsServices>();
 builder.Services.AddScoped<DashboardServices>();
+builder.Services.AddScoped<CartServices>();
 
 
 

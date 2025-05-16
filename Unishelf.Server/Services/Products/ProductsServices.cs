@@ -14,7 +14,6 @@ namespace Unishelf.Server.Services.Products
         private readonly ApplicationDbContext _dbContext;
         private readonly EncryptionHelper _encryptionHelper;
 
-
         public ProductsServices(ApplicationDbContext dbContext, EncryptionHelper encryptionHelper)
         {
             _dbContext = dbContext;
@@ -49,10 +48,9 @@ namespace Unishelf.Server.Services.Products
             return categories.Cast<object>().ToList();
         }
 
-
         public async Task<object> GetBrandsByCategory(string categoryID)
         {
-            int categoryGuid = int.Parse(_encryptionHelper.Decrypt(categoryID)); // Decrypt the categoryID
+            int categoryGuid = int.Parse(_encryptionHelper.Decrypt(categoryID));
 
             var categoryWithBrands = await _dbContext.Categories
                 .Where(c => c.CategoryID == categoryGuid && c.CategoryEnabled)
@@ -77,16 +75,13 @@ namespace Unishelf.Server.Services.Products
                 })
                 .FirstOrDefaultAsync();
 
-            // Check if the category exists
             if (categoryWithBrands == null)
             {
-                return new { categoryName = "", brands = new List<object>() }; // Return an object with empty values if no category is found
+                return new { categoryName = "", brands = new List<object>() };
             }
 
             return new { categoryName = categoryWithBrands.CategoryName, brands = categoryWithBrands.Brands };
         }
-
-
 
         public async Task<List<object>> GetProductsByBrandAndCategory(string encryptedBrandId, string encryptedCategoryId)
         {
@@ -102,7 +97,7 @@ namespace Unishelf.Server.Services.Products
                     ProductName = p.ProductName,
                     Description = p.Description,
                     Price = p.Price,
-                    PricePerMsq  = p.PricePerMsq,
+                    PricePerMsq = p.PricePerMsq,
                     CategoryID = encryptedCategoryId,
                     Quantity = p.Quantity,
                     Images = _dbContext.Images
@@ -129,14 +124,14 @@ namespace Unishelf.Server.Services.Products
                 {
                     ProductID = _encryptionHelper.Encrypt(p.ProductID.ToString()),
                     BrandID = encryptedBrandId,
-                    BrandName = p.Brands.BrandName,                  // Include Brand Name
+                    BrandName = p.Brands.BrandName,
                     ProductName = p.ProductName,
                     Currency = p.Currency,
                     Description = p.Description,
                     Price = p.Price,
                     PricePerMsq = p.PricePerMsq,
                     CategoryID = encryptedCategoryId,
-                    CategoryName = p.Categories.CategoryName,        // Include Category Name
+                    CategoryName = p.Categories.CategoryName,
                     Quantity = p.Quantity,
                     Images = _dbContext.Images
                         .Where(img => img.ProductID == p.ProductID)
@@ -149,45 +144,62 @@ namespace Unishelf.Server.Services.Products
             return products.Cast<object>().ToList();
         }
 
-
         public async Task<object> GetProductDetails(string encryptedProductId)
         {
-            var decryptedProductId = _encryptionHelper.Decrypt(encryptedProductId);
-
-            var product = await _dbContext.Products
-                .Where(p => p.ProductID == int.Parse(decryptedProductId))
-                .Select(p => new
+            try
+            {
+                var decryptedProductId = _encryptionHelper.Decrypt(encryptedProductId);
+                if (!int.TryParse(decryptedProductId, out int productId))
                 {
-                    ProductID = _encryptionHelper.Encrypt(p.ProductID.ToString()),
-                    ProductName = p.ProductName ?? "No name available",
-                    Description = p.Description ?? "No description available",
-                    PricePerMsq = p.PricePerMsq.HasValue ? (double)p.PricePerMsq.Value : 0.0, // Handling nullable double
-                    Price = p.Price.HasValue ? (double)p.Price.Value : 0, // Handling nullable int
-                    Currency = p.Currency ?? "",
-                    QtyPerBox = p.QtyPerBox.HasValue ? p.QtyPerBox.Value : 0, // Handling nullable int
-                    Height = p.Height.HasValue ? p.Height.Value : 0, // Handling nullable int
-                    Width = p.Width.HasValue ? p.Width.Value : 0, // Handling nullable int
-                    Depth = p.Depth.HasValue ? p.Depth.Value : 0, // Handling nullable int
-                    SqmPerBox = p.SqmPerBox.HasValue ? p.SqmPerBox.Value : 0.0, // Handling nullable double
-                    Quantity = p.Quantity.HasValue ? p.Quantity.Value : 0, // Handling nullable int
-                    Available = p.Available, // No need for null check as Available is non-nullable
-                    BrandName = p.Brands.BrandName ?? "No brand available", // Check Brands entity
-                    CategoryName = p.Categories.CategoryName ?? "No category available", // Check Categories entity
-                    BrandID = _encryptionHelper.Encrypt(p.BrandID.ToString()),
-                    CategoryID = _encryptionHelper.Encrypt(p.CategoryID.ToString()),
-                    Images = _dbContext.Images
-                        .Where(img => img.ProductID == p.ProductID)
-                        .OrderBy(img => img.ImageID)
-                        .Select(img => new
-                        {
-                            ImageID = _encryptionHelper.Encrypt((img.ImageID).ToString()), // Include ImageID
-                            ImageData = Convert.ToBase64String(img.Image) // Base64-encoded image
-                        })
-                        .ToList()
-                })
-                .FirstOrDefaultAsync();
+                    throw new ArgumentException("Invalid ProductID format.");
+                }
 
-            return product;
+                var product = await _dbContext.Products
+                    .Include(p => p.Brands)
+                    .Include(p => p.Categories)
+                    .Where(p => p.ProductID == productId)
+                    .Select(p => new
+                    {
+                        ProductID = _encryptionHelper.Encrypt(p.ProductID.ToString()),
+                        ProductName = p.ProductName,
+                        Description = p.Description, // Return null if Description is null
+                        PricePerMsq = p.PricePerMsq.HasValue ? (double?)p.PricePerMsq.Value : null,
+                        Price = p.Price.HasValue ? (double?)p.Price.Value : null,
+                        Currency = p.Currency ?? "",
+                        QtyPerBox = p.QtyPerBox.HasValue ? (int?)p.QtyPerBox.Value : null,
+                        Height = p.Height.HasValue ? (int?)p.Height.Value : null,
+                        Width = p.Width.HasValue ? (int?)p.Width.Value : null,
+                        Depth = p.Depth.HasValue ? (int?)p.Depth.Value : null,
+                        SqmPerBox = p.SqmPerBox.HasValue ? (double?)p.SqmPerBox.Value : null,
+                        Quantity = p.Quantity.HasValue ? (int?)p.Quantity.Value : null,
+                        Available = p.Available,
+                        BrandName = p.Brands != null ? p.Brands.BrandName ?? "No brand available" : "No brand available",
+                        CategoryName = p.Categories != null ? p.Categories.CategoryName ?? "No category available" : "No category available",
+                        BrandID = _encryptionHelper.Encrypt(p.BrandID.ToString()),
+                        CategoryID = _encryptionHelper.Encrypt(p.CategoryID.ToString()),
+                        Images = _dbContext.Images
+                            .Where(img => img.ProductID == p.ProductID)
+                            .OrderBy(img => img.ImageID)
+                            .Select(img => new
+                            {
+                                ImageID = _encryptionHelper.Encrypt(img.ImageID.ToString()),
+                                ImageData = img.Image != null ? Convert.ToBase64String(img.Image) : ""
+                            })
+                            .ToList()
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (product == null)
+                {
+                    return new { Error = "Product not found." };
+                }
+
+                return product;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error fetching product details: {ex.Message}");
+            }
         }
 
         public async Task<string> AddImage(string encryptedProductId, string base64Image)
@@ -212,7 +224,6 @@ namespace Unishelf.Server.Services.Products
                 _dbContext.Images.Add(image);
                 await _dbContext.SaveChangesAsync();
 
-                // After saving, ImageID is generated
                 string encryptedImageId = _encryptionHelper.Encrypt(image.ImageID.ToString());
 
                 return encryptedImageId;
@@ -227,8 +238,6 @@ namespace Unishelf.Server.Services.Products
             }
         }
 
-
-
         public async Task<Images> DeleteImage(string encryptedImageId)
         {
             try
@@ -236,8 +245,6 @@ namespace Unishelf.Server.Services.Products
                 int decryptedImageId = int.Parse(_encryptionHelper.Decrypt(encryptedImageId));
 
                 var image = await _dbContext.Images.FindAsync(decryptedImageId);
-                
-              
 
                 _dbContext.Images.Remove(image);
                 await _dbContext.SaveChangesAsync();
@@ -253,77 +260,99 @@ namespace Unishelf.Server.Services.Products
             }
         }
 
-
         public async Task<string> AddOrUpdateProduct(JsonElement request)
         {
             try
             {
                 JsonElement data = request.GetProperty("data");
 
-                // Handle productID safely
-                int productID = 0; // Default for new products
+                // Handle productID
+                int productID = 0;
                 if (data.TryGetProperty("productID", out var productIDProp) && productIDProp.ValueKind != JsonValueKind.Null)
                 {
-                    string encryptedProductID = productIDProp.ToString();
+                    string encryptedProductID = productIDProp.GetString();
                     if (!string.IsNullOrEmpty(encryptedProductID) && encryptedProductID != "0")
                     {
                         productID = int.Parse(_encryptionHelper.Decrypt(encryptedProductID));
                     }
                 }
 
-                int categoryID = int.Parse(_encryptionHelper.Decrypt(data.GetProperty("categoryID").ToString()));
-                int brandID = int.Parse(_encryptionHelper.Decrypt(data.GetProperty("brandID").ToString()));
+                // Required fields
+                string categoryIDStr = data.TryGetProperty("categoryID", out var categoryIDProp) && categoryIDProp.ValueKind != JsonValueKind.Null
+                    ? categoryIDProp.GetString()
+                    : null;
+                int categoryID = string.IsNullOrEmpty(categoryIDStr) ? 0 : int.Parse(_encryptionHelper.Decrypt(categoryIDStr));
+
+                string brandIDStr = data.TryGetProperty("brandID", out var brandIDProp) && brandIDProp.ValueKind != JsonValueKind.Null
+                    ? brandIDProp.GetString()
+                    : null;
+                int brandID = string.IsNullOrEmpty(brandIDStr) ? 0 : int.Parse(_encryptionHelper.Decrypt(brandIDStr));
 
                 // Safe parsing functions
                 int? TryParseInt(string propertyName)
                 {
-                    return data.TryGetProperty(propertyName, out var prop) && prop.ValueKind == JsonValueKind.Number
-                        ? prop.GetInt32()
-                        : (prop.ValueKind == JsonValueKind.String ? int.Parse(prop.GetString()) : (int?)null);
+                    if (!data.TryGetProperty(propertyName, out var prop) || prop.ValueKind == JsonValueKind.Null)
+                        return null; // Return null instead of 0
+                    if (prop.ValueKind == JsonValueKind.String)
+                    {
+                        string value = prop.GetString();
+                        return string.IsNullOrEmpty(value) ? null : int.Parse(value);
+                    }
+                    return prop.GetInt32();
                 }
 
-                float? TryParseFloat(string propertyName)
+                double? TryParseDouble(string propertyName)
                 {
-                    return data.TryGetProperty(propertyName, out var prop) && prop.ValueKind == JsonValueKind.Number
-                        ? prop.GetSingle()
-                        : (prop.ValueKind == JsonValueKind.String ? float.Parse(prop.GetString()) : (float?)null);
+                    if (!data.TryGetProperty(propertyName, out var prop) || prop.ValueKind == JsonValueKind.Null)
+                        return null; // Return null instead of 0f
+                    if (prop.ValueKind == JsonValueKind.String)
+                    {
+                        string value = prop.GetString();
+                        return string.IsNullOrEmpty(value) ? null : double.Parse(value);
+                    }
+                    return prop.GetDouble();
+                }
+
+                string TryParseString(string propertyName)
+                {
+                    if (!data.TryGetProperty(propertyName, out var prop) || prop.ValueKind == JsonValueKind.Null)
+                        return null;
+                    string value = prop.GetString();
+                    return string.IsNullOrEmpty(value) ? null : value;
                 }
 
                 // Parse values
+                string productName = TryParseString("productName");
+                string description = TryParseString("description");
+                string currency = TryParseString("currency");
                 int? height = TryParseInt("height");
                 int? width = TryParseInt("width");
                 int? depth = TryParseInt("depth");
-                float? pricePerMsq = TryParseFloat("pricePerMsq");
-                float? price = TryParseFloat("price");
-                int? sqmPerBox = TryParseInt("sqmPerBox");
+                double? pricePerMsq = TryParseDouble("pricePerMsq");
+                double? price = TryParseDouble("price");
+                double? sqmPerBox = TryParseDouble("sqmPerBox");
                 int? qtyPerBox = TryParseInt("qtyPerBox");
                 int? quantity = TryParseInt("quantity");
-                
-
                 bool available = data.TryGetProperty("available", out var availableProp) && availableProp.ValueKind == JsonValueKind.True;
 
-                // Handling multiple images as JsonArray
-                // Handling multiple images as JsonArray
-                IEnumerable<JsonElement> imagesArray = data.TryGetProperty("imageData", out var imageDataProp) && imageDataProp.ValueKind == JsonValueKind.Array
-                    ? imageDataProp.EnumerateArray()  // Using EnumerateArray() to get an IEnumerable<JsonElement>
-                    : new List<JsonElement>();         // Default to an empty list if no images
-                                                       // Default to empty array if no images
+                // Handle images
+                IEnumerable<string> imagesArray = data.TryGetProperty("imageData", out var imageDataProp) && imageDataProp.ValueKind == JsonValueKind.Array
+                    ? imageDataProp.EnumerateArray().Select(e => e.GetString()).Where(s => !string.IsNullOrEmpty(s))
+                    : new List<string>();
 
-                string description = data.TryGetProperty("description", out var descProp) && descProp.ValueKind == JsonValueKind.String
-                    ? descProp.GetString()
-                    : null;
-
-                string productName = data.TryGetProperty("productName", out var nameProp) && nameProp.ValueKind == JsonValueKind.String
-                    ? nameProp.GetString()
-                    : null;
-
-                string currency = data.TryGetProperty("currency", out var currencyProp) && currencyProp.ValueKind == JsonValueKind.String
-                    ? currencyProp.GetString()
-                    : null;
-
-
-                // Debugging logs
-                Console.WriteLine($"Product ID: {productID}, Name: {productName}, Price: {price}");
+                // Validation
+                if (string.IsNullOrEmpty(productName))
+                {
+                    return "Product name is required.";
+                }
+                if (categoryID == 0)
+                {
+                    return "Category ID is required.";
+                }
+                if (brandID == 0)
+                {
+                    return "Brand ID is required.";
+                }
 
                 Unishelf.Server.Models.Products product;
 
@@ -341,7 +370,7 @@ namespace Unishelf.Server.Services.Products
                         Depth = depth,
                         PricePerMsq = pricePerMsq,
                         Price = price,
-                        Currency= currency,
+                        Currency = currency,
                         QtyPerBox = qtyPerBox,
                         SqmPerBox = sqmPerBox,
                         Quantity = quantity,
@@ -349,10 +378,8 @@ namespace Unishelf.Server.Services.Products
                     };
 
                     _dbContext.Products.Add(product);
-                    await _dbContext.SaveChangesAsync(); // Get the generated ProductID
-                    productID = product.ProductID; // Assign the new ProductID
-
-                    Console.WriteLine("New product added successfully.");
+                    await _dbContext.SaveChangesAsync();
+                    productID = product.ProductID;
                 }
                 else
                 {
@@ -367,7 +394,7 @@ namespace Unishelf.Server.Services.Products
                     }
 
                     product.ProductName = productName ?? product.ProductName;
-                    product.Description = description ?? product.Description;
+                    product.Description = description;
                     product.BrandID = brandID;
                     product.CategoryID = categoryID;
                     product.Height = height ?? product.Height;
@@ -382,24 +409,21 @@ namespace Unishelf.Server.Services.Products
                     product.Available = available;
 
                     await _dbContext.SaveChangesAsync();
-                    Console.WriteLine("Product updated successfully.");
                 }
 
-                // Handle multiple images
-                foreach (var imageElement in imagesArray)
+                // Handle images
+                foreach (var imageBase64 in imagesArray)
                 {
-                    string imageBase64 = imageElement.ToString().Trim('"'); // Remove surrounding quotes
                     if (!string.IsNullOrEmpty(imageBase64))
                     {
                         var imageBytes = Convert.FromBase64String(imageBase64);
                         var image = new Images
                         {
-                            ProductID = productID, // Correct ProductID
+                            ProductID = productID,
                             Image = imageBytes
                         };
                         _dbContext.Images.Add(image);
                         await _dbContext.SaveChangesAsync();
-                        Console.WriteLine("Image added successfully.");
                     }
                 }
 
@@ -422,15 +446,12 @@ namespace Unishelf.Server.Services.Products
             }
         }
 
-
-
-
         public async Task<List<object>> GetActiveBrands()
         {
             try
             {
                 var brands = await _dbContext.Brands
-                    .Where(b => b.BrandEnabled) // Assuming 'BrandEnabled' is a boolean column
+                    .Where(b => b.BrandEnabled)
                     .Select(b => new
                     {
                         BrandID = _encryptionHelper.Encrypt(b.BrandID.ToString()),
@@ -438,29 +459,7 @@ namespace Unishelf.Server.Services.Products
                     })
                     .ToListAsync();
 
-                return brands.Cast<object>().ToList(); // Ensuring List<object> return type
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Internal error: {ex.Message}");
-            }
-        } 
-        
-        
-        public async Task<List<object>> GetActiveCatrgories()
-        {
-            try
-            {
-                var categories = await _dbContext.Categories
-                    .Where(c => c.CategoryEnabled) // Assuming 'BrandEnabled' is a boolean column
-                    .Select(c => new
-                    {
-                        CategoryID = _encryptionHelper.Encrypt(c.CategoryID.ToString()),
-                        CategoryName = c.CategoryName
-                    })
-                    .ToListAsync();
-
-                return categories.Cast<object>().ToList(); // Ensuring List<object> return type
+                return brands.Cast<object>().ToList();
             }
             catch (Exception ex)
             {
@@ -468,7 +467,25 @@ namespace Unishelf.Server.Services.Products
             }
         }
 
+        public async Task<List<object>> GetActiveCatrgories()
+        {
+            try
+            {
+                var categories = await _dbContext.Categories
+                    .Where(c => c.CategoryEnabled)
+                    .Select(c => new
+                    {
+                        categoryID = _encryptionHelper.Encrypt(c.CategoryID.ToString()),
+                        categoryName = c.CategoryName
+                    })
+                    .ToListAsync();
 
-
+                return categories.Cast<object>().ToList();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Internal error: {ex.Message}");
+            }
+        }
     }
 }

@@ -61,7 +61,7 @@ const BrandsandCategories: React.FC = () => {
 
 
     const openCategoryOverlay = (category: any | null = null) => { // Type any due to encryptedCategoryID.
-        console.log(category);
+        
         if (category) {
             setNewCategory({
                 name: category.categoryName,
@@ -332,7 +332,7 @@ const BrandsandCategories: React.FC = () => {
                     <div className="brands-overlay-content">
                         <h3 className="brands-overlay-title">{newBrand.brandId ? 'Edit' : 'Add New'} Brand</h3>
                         <label className="overlay-brand-name">Brand Name</label>
-                        <input type="text" placeholder="Brand Name" value={newBrand.name} onChange={handleBrandInputChange} />
+                        <input className="add-brand-name" type="text" placeholder="Brand Name" value={newBrand.name} onChange={handleBrandInputChange} />
                         <label className="overlay-brand-image">Brand Image</label>
                         <div className="upload-switch-container">
                             <label className="brands-upload-box">
@@ -364,7 +364,7 @@ const BrandsandCategories: React.FC = () => {
                     <div className="brands-overlay-content">
                         <h3 className="brands-overlay-title">{newCategory.categoryId ? 'Edit' : 'Add New'} Category</h3>
                         <label className="overlay-brand-name">Category Name</label>
-                        <input type="text" placeholder="Category Name" value={newCategory.name} onChange={handleCategoryInputChange} />
+                        <input type="text" className="add-brand-name"  placeholder="Category Name" value={newCategory.name} onChange={handleCategoryInputChange} />
                         <label className="overlay-brand-image">is Category Active?</label>
                         <label className="switch">
                             <input type="checkbox" checked={newCategory.isActive} onChange={handleCategoryToggleChange} />

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Unishelf.Server.Models
 {
@@ -10,8 +11,8 @@ namespace Unishelf.Server.Models
 
         [StringLength(255),Required]
         public string ProductName { get; set; }
-
-        public string Description { get; set; }
+        [AllowNull]
+        public string ?  Description { get; set; }
 
         [ForeignKey("BrandID")]
         public int BrandID { get; set; }

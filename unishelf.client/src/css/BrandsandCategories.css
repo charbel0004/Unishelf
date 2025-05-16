@@ -53,7 +53,10 @@
     border-radius: 5px;
     background-color: white;
 }
-
+.add-brand-name {
+    color: black;
+    background-color: white;
+}
 /* For the parent containers, set a minimum height */
 .brands, .categories {
     background-color: white;
@@ -356,7 +359,10 @@ input:checked + .slider:before {
     transform: translateX(18px);
 }
 
-/* Button Container */
+/* 
+    
+    
+    Container */
 .brands-button-container {
     display: flex;
     align-content:center;

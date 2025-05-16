@@ -5,11 +5,28 @@ import './css/LogIn.css';
 import config from './config';
 import { useNavigate } from 'react-router-dom';
 
+interface CartProduct {
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+}
+
 interface LoginProps {
     setLoggedInUser: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-const Login: FC<LoginProps> = () => {
+const sessionCart = {
+    get: (): CartProduct[] => {
+        const cart = sessionStorage.getItem('cart');
+        return cart ? JSON.parse(cart) : [];
+    },
+    clear: () => {
+        sessionStorage.removeItem('cart');
+    },
+};
+
+const Login: FC<LoginProps> = ({ setLoggedInUser }) => {
     const [isSignUp, setIsSignUp] = useState(false);
     const [phoneNumber, setPhoneNumber] = useState<string | undefined>();
     const [formData, setFormData] = useState({
@@ -37,7 +54,7 @@ const Login: FC<LoginProps> = () => {
                     const data = await response.json();
                     setUsernames(data);
                 } else {
-                    console.error('Failed to fetch usernames');
+                   console.error('Failed to fetch usernames');
                 }
             } catch (error) {
                 console.error('Error fetching usernames:', error);
@@ -52,7 +69,6 @@ const Login: FC<LoginProps> = () => {
         setFormData((prevData) => ({ ...prevData, [id]: value }));
 
         if (id === 'username') {
-            // Check if the username is taken
             const usernameExists = usernames.includes(value);
             setIsUsernameTaken(usernameExists);
         }
@@ -77,6 +93,34 @@ const Login: FC<LoginProps> = () => {
             setConfirmPasswordError('Passwords do not match.');
         } else {
             setConfirmPasswordError('');
+        }
+    };
+
+    const mergeSessionCart = async (token: string, username: string) => {
+        const sessionCartItems = sessionCart.get();
+        if (sessionCartItems.length === 0) return;
+
+        try {
+            for (const item of sessionCartItems) {
+                const response = await fetch(`${config.API_URL}/api/Cart/Add-Cart-Items`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: username,
+                        encryptedProductId: item.id,
+                        quantity: item.quantity,
+                    }),
+                });
+                if (!response.ok) {
+                    console.error(`Failed to merge cart item ${item.id}`);
+                }
+            }
+            sessionCart.clear();
+        } catch (error) {
+            console.error('Error merging session cart:', error);
         }
     };
 
@@ -120,12 +164,14 @@ const Login: FC<LoginProps> = () => {
             const result = await response.json();
 
             if (response.ok) {
+                localStorage.setItem('token', result.token);
+                setLoggedInUser(formData.username);
                 if (isSignUp) {
                     setSuccessMessage('User created successfully!');
-                    localStorage.setItem('token', result.token);
+                    await mergeSessionCart(result.token, formData.username);
                     window.location.reload();
                 } else {
-                    localStorage.setItem('token', result.token);
+                    await mergeSessionCart(result.token, formData.username);
                     navigate('/');
                 }
             } else {

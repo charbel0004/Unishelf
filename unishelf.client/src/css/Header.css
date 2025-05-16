@@ -5,10 +5,9 @@
     box-sizing: border-box;
 }
 
-.logo {
+.header-logo {
     width: fit-content;
-    justify-content: flex-start;
-    font: italic;
+    font-style: italic;
 }
 
 /* Set default styles for the entire page */
@@ -27,83 +26,126 @@ body {
     top: 0;
     width: 100%;
     z-index: 1000;
-    justify-content: space-between; /* This will push logo and nav apart */
+    justify-content: space-between;
+    align-items: center;
 }
 
-.nav {
+.header-nav {
     display: flex;
-    justify-content: flex-end;
-    align-items: center; /* This will vertically center the navigation */
-}
-
-/* Wrapper for header content */
-.header-content {
-    max-width: 1200px;
-    margin-top: 50%;
-    display: flex;
-    justify-content: space-between; /* This ensures space between elements */
     align-items: center;
 }
 
 /* Main navigation container */
-.main-nav {
+.header-main-nav {
     display: flex;
     align-items: center;
     gap: 1.5rem;
 }
 
 /* Navigation styles */
-.nav-links {
+.header-nav-links {
     list-style: none;
-    margin-top: 5%;
     display: flex;
-    justify-content: flex-end;
     gap: 1.5rem;
     align-items: center;
 }
 
-    .nav-links li a {
+    .header-nav-links li a {
         color: white;
         text-decoration: none;
         padding: 0.5rem;
         transition: all 0.3s ease;
     }
 
-        .nav-links li a:hover {
+        .header-nav-links li a:hover {
             text-decoration: underline;
             opacity: 0.8;
         }
 
+/* Profile styles */
+.header-profile {
+    position: relative;
+}
+
+.header-user-icon-active {
+    color: #ffd700; /* Gold color to indicate active state */
+}
+
+/* Profile dropdown styles */
+.header-profile-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: #2E2E2E; /* Darker shade to match screenshot */
+    color: white; /* Ensure text is white */
+    padding: 1rem;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+    .header-profile-dropdown p {
+        margin: 0 0 0.5rem;
+        color: white; /* Ensure paragraph text is white */
+    }
+
+    .header-profile-dropdown button {
+        background: none;
+        border: none;
+        color: white; /* Ensure button text is white */
+        cursor: pointer;
+        padding: 0.5rem;
+    }
+
+        .header-profile-dropdown button:hover {
+            text-decoration: underline;
+        }
+
+/* Mobile menu button */
+.header-mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
 
 /* Media queries for responsive design */
 @media screen and (max-width: 768px) {
-    .mobile-menu-btn {
+    .header-mobile-menu-btn {
         display: block;
     }
 
-    .nav-links {
+    .header-nav-links {
         display: none;
         position: absolute;
         top: 100%;
-        left: 0;
         right: 0;
         background-color: #333;
         flex-direction: column;
         padding: 1rem;
         gap: 1rem;
+        width: fit-content;
     }
 
-        .nav-links.active {
+        .header-nav-links.header-active {
             display: flex;
         }
 
-        .nav-links li {
-            width: 100%;
-            text-align: center;
+        .header-nav-links li {
+            text-align: right;
         }
 
-            .nav-links li a {
+            .header-nav-links li a {
                 display: block;
                 padding: 0.75rem;
             }
+
+    .header-profile-dropdown {
+        position: static;
+        background-color: #2E2E2E;
+        padding: 0.5rem;
+        width: 100%;
+    }
 }

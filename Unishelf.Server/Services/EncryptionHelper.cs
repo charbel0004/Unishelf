@@ -10,7 +10,7 @@ public class EncryptionHelper
         _protector = provider.CreateProtector("EncryptionHelper");
     }
 
-    public string Encrypt(string input)
+    public virtual string Encrypt(string input)
     {
         var encrypted = _protector.Protect(input);
         return Uri.EscapeDataString(encrypted); // Ensure URL safe

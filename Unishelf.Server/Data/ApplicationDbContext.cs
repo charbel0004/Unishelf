@@ -11,61 +11,100 @@ namespace Unishelf.Server.Data
         {
         }
 
-        // DbSets for each of your models
-        public DbSet<User> User { get; set; }
-        public DbSet<Cart> Carts { get; set; }
-        public DbSet<Brands> Brands { get; set; }
-        public DbSet<Categories> Categories { get; set; }
-        public DbSet<Products> Products { get; set; }
-        public DbSet<Images> Images { get; set; } // Images DbSet
-        public DbSet<BrandImages> BrandImages { get; set; } // BrandImages DbSet
+        // DbSets for each of your models, marked as virtual
+        public virtual DbSet<User> User { get; set; }
+        public virtual DbSet<Cart> Carts { get; set; }
+        public virtual DbSet<Brands> Brands { get; set; }
+        public virtual DbSet<Categories> Categories { get; set; }
+        public virtual DbSet<Products> Products { get; set; }
+        public virtual DbSet<Images> Images { get; set; }
+        public virtual DbSet<BrandImages> BrandImages { get; set; }
 
-        // Configure additional behavior here if needed
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Cart-Product relationship
+            // Cart relationships
             modelBuilder.Entity<Cart>()
                 .HasOne(c => c.Products)
                 .WithMany(p => p.Cart)
                 .HasForeignKey(c => c.ProductID)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Cart-User relationship
             modelBuilder.Entity<Cart>()
                 .HasOne(c => c.User)
                 .WithMany(u => u.Cart)
                 .HasForeignKey(c => c.UserID)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Product-Brand relationship
+            // Configure Cart properties
+            modelBuilder.Entity<Cart>()
+                .Property(c => c.UnitPrice)
+                .HasColumnType("decimal(18,2)"); // Ensure precision for UnitPrice
+
+            modelBuilder.Entity<Cart>()
+                .Property(c => c.TotalPrice)
+                .HasColumnType("decimal(18,2)"); // Ensure precision for TotalPrice
+
+            // Add indexes for performance
+            modelBuilder.Entity<Cart>()
+                .HasIndex(c => c.UserID)
+                .HasDatabaseName("IX_Carts_UserID");
+
+            modelBuilder.Entity<Cart>()
+                .HasIndex(c => c.ProductID)
+                .HasDatabaseName("IX_Carts_ProductID");
+
+            // Products relationships
             modelBuilder.Entity<Products>()
                 .HasOne(p => p.Brands)
                 .WithMany(b => b.Products)
                 .HasForeignKey(p => p.BrandID)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Product-Category relationship
             modelBuilder.Entity<Products>()
                 .HasOne(p => p.Categories)
                 .WithMany(c => c.Products)
                 .HasForeignKey(p => p.CategoryID)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Images-Product relationship
+            // Images relationships
             modelBuilder.Entity<Images>()
                 .HasOne(i => i.Products)
                 .WithMany(p => p.Images)
                 .HasForeignKey(i => i.ProductID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // BrandImages-Brand relationship
+            // BrandImages relationships
             modelBuilder.Entity<BrandImages>()
                 .HasOne(bi => bi.Brands)
-                .WithMany(b => b.BrandImages) // Assuming Brands has a collection of BrandImages
+                .WithMany(b => b.BrandImages)
                 .HasForeignKey(bi => bi.BrandID)
-                .OnDelete(DeleteBehavior.Cascade); // Modify delete behavior as needed
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Products>()
+                .HasOne(p => p.Brands)
+                .WithMany(b => b.Products)
+                .HasForeignKey(p => p.BrandID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Products>()
+                .HasOne(p => p.Categories)
+                .WithMany(c => c.Products)
+                .HasForeignKey(p => p.CategoryID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Images>()
+                .HasOne(i => i.Products)
+                .WithMany(p => p.Images)
+                .HasForeignKey(i => i.ProductID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<BrandImages>()
+                .HasOne(bi => bi.Brands)
+                .WithMany(b => b.BrandImages)
+                .HasForeignKey(bi => bi.BrandID)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
