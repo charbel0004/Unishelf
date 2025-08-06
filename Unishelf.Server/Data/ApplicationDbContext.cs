@@ -11,7 +11,6 @@ namespace Unishelf.Server.Data
         {
         }
 
-        // DbSets for each of your models, marked as virtual
         public virtual DbSet<User> User { get; set; }
         public virtual DbSet<Cart> Carts { get; set; }
         public virtual DbSet<Brands> Brands { get; set; }
@@ -19,12 +18,14 @@ namespace Unishelf.Server.Data
         public virtual DbSet<Products> Products { get; set; }
         public virtual DbSet<Images> Images { get; set; }
         public virtual DbSet<BrandImages> BrandImages { get; set; }
+        public virtual DbSet<Order> Orders { get; set; }
+        public virtual DbSet<OrderItem> OrderItems { get; set; }
+        public virtual DbSet<DeliveryAddresses> DeliveryAddresses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Cart relationships
             modelBuilder.Entity<Cart>()
                 .HasOne(c => c.Products)
                 .WithMany(p => p.Cart)
@@ -37,16 +38,14 @@ namespace Unishelf.Server.Data
                 .HasForeignKey(c => c.UserID)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Configure Cart properties
             modelBuilder.Entity<Cart>()
                 .Property(c => c.UnitPrice)
-                .HasColumnType("decimal(18,2)"); // Ensure precision for UnitPrice
+                .HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<Cart>()
                 .Property(c => c.TotalPrice)
-                .HasColumnType("decimal(18,2)"); // Ensure precision for TotalPrice
+                .HasColumnType("decimal(18,2)");
 
-            // Add indexes for performance
             modelBuilder.Entity<Cart>()
                 .HasIndex(c => c.UserID)
                 .HasDatabaseName("IX_Carts_UserID");
@@ -55,33 +54,6 @@ namespace Unishelf.Server.Data
                 .HasIndex(c => c.ProductID)
                 .HasDatabaseName("IX_Carts_ProductID");
 
-            // Products relationships
-            modelBuilder.Entity<Products>()
-                .HasOne(p => p.Brands)
-                .WithMany(b => b.Products)
-                .HasForeignKey(p => p.BrandID)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Products>()
-                .HasOne(p => p.Categories)
-                .WithMany(c => c.Products)
-                .HasForeignKey(p => p.CategoryID)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Images relationships
-            modelBuilder.Entity<Images>()
-                .HasOne(i => i.Products)
-                .WithMany(p => p.Images)
-                .HasForeignKey(i => i.ProductID)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // BrandImages relationships
-            modelBuilder.Entity<BrandImages>()
-                .HasOne(bi => bi.Brands)
-                .WithMany(b => b.BrandImages)
-                .HasForeignKey(bi => bi.BrandID)
-                .OnDelete(DeleteBehavior.Cascade);
-
             modelBuilder.Entity<Products>()
                 .HasOne(p => p.Brands)
                 .WithMany(b => b.Products)
@@ -105,6 +77,70 @@ namespace Unishelf.Server.Data
                 .WithMany(b => b.BrandImages)
                 .HasForeignKey(bi => bi.BrandID)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.User)
+                .WithMany(u => u.Order)
+                .HasForeignKey(o => o.UserID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<OrderItem>()
+                .HasOne(oi => oi.Order)
+                .WithMany(o => o.OrderItems)
+                .HasForeignKey(oi => oi.OrderID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OrderItem>()
+                .HasOne(oi => oi.Products)
+                .WithMany(p => p.OrderItem)
+                .HasForeignKey(oi => oi.ProductID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DeliveryAddresses>()
+                .HasOne(da => da.Order)
+                .WithOne(o => o.DeliveryAddresses)
+                .HasForeignKey<DeliveryAddresses>(da => da.OrderID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Order>()
+                .Property(o => o.Subtotal)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Order>()
+                .Property(o => o.DeliveryCharge)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Order>()
+                .Property(o => o.GrandTotal)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Order>()
+                .Property(o => o.CreatedDate)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<Order>()
+                .Property(o => o.Status)
+                .IsRequired();
+
+            modelBuilder.Entity<OrderItem>()
+                .Property(oi => oi.UnitPrice)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<OrderItem>()
+                .Property(oi => oi.TotalPrice)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.UserID)
+                .HasDatabaseName("IX_Orders_UserID");
+
+            modelBuilder.Entity<OrderItem>()
+                .HasIndex(oi => oi.OrderID)
+                .HasDatabaseName("IX_OrderItems_OrderID");
+
+            modelBuilder.Entity<OrderItem>()
+                .HasIndex(oi => oi.ProductID)
+                .HasDatabaseName("IX_OrderItems_ProductID");
         }
     }
 }

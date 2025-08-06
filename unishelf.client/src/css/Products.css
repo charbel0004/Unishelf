@@ -12,7 +12,7 @@ body {
     position: relative; /* For positioning the add product button */
 }
 
-.layout {
+.layout {   
     display: flex;
     width: 100%; /* Take full width of the page */
     gap: 10px;

@@ -182,6 +182,53 @@ namespace Unishelf.Server.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("Unishelf.Server.Models.DeliveryAddresses", b =>
+                {
+                    b.Property<int>("DeliveryAddressID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DeliveryAddressID"));
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("OrderID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PostalCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("StateProvince")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Street")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.HasKey("DeliveryAddressID");
+
+                    b.HasIndex("OrderID")
+                        .IsUnique();
+
+                    b.ToTable("DeliveryAddresses");
+                });
+
             modelBuilder.Entity("Unishelf.Server.Models.Images", b =>
                 {
                     b.Property<int>("ImageID")
@@ -202,6 +249,86 @@ namespace Unishelf.Server.Migrations
                     b.HasIndex("ProductID");
 
                     b.ToTable("Images");
+                });
+
+            modelBuilder.Entity("Unishelf.Server.Models.Order", b =>
+                {
+                    b.Property<int>("OrderID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderID"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<decimal>("DeliveryCharge")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("GrandTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("OrderDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UserID")
+                        .HasColumnType("int");
+
+                    b.HasKey("OrderID");
+
+                    b.HasIndex("UserID")
+                        .HasDatabaseName("IX_Orders_UserID");
+
+                    b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("Unishelf.Server.Models.OrderItem", b =>
+                {
+                    b.Property<int>("OrderItemID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderItemID"));
+
+                    b.Property<int>("OrderID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("OrderItemID");
+
+                    b.HasIndex("OrderID")
+                        .HasDatabaseName("IX_OrderItems_OrderID");
+
+                    b.HasIndex("ProductID")
+                        .HasDatabaseName("IX_OrderItems_ProductID");
+
+                    b.ToTable("OrderItems");
                 });
 
             modelBuilder.Entity("Unishelf.Server.Models.Products", b =>
@@ -229,7 +356,6 @@ namespace Unishelf.Server.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("Height")
@@ -297,6 +423,17 @@ namespace Unishelf.Server.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Unishelf.Server.Models.DeliveryAddresses", b =>
+                {
+                    b.HasOne("Unishelf.Server.Models.Order", "Order")
+                        .WithOne("DeliveryAddresses")
+                        .HasForeignKey("Unishelf.Server.Models.DeliveryAddresses", "OrderID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
             modelBuilder.Entity("Unishelf.Server.Models.Images", b =>
                 {
                     b.HasOne("Unishelf.Server.Models.Products", "Products")
@@ -304,6 +441,35 @@ namespace Unishelf.Server.Migrations
                         .HasForeignKey("ProductID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("Unishelf.Server.Models.Order", b =>
+                {
+                    b.HasOne("Unishelf.Models.User", "User")
+                        .WithMany("Order")
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Unishelf.Server.Models.OrderItem", b =>
+                {
+                    b.HasOne("Unishelf.Server.Models.Order", "Order")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("OrderID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Unishelf.Server.Models.Products", "Products")
+                        .WithMany("OrderItem")
+                        .HasForeignKey("ProductID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
 
                     b.Navigation("Products");
                 });
@@ -330,6 +496,8 @@ namespace Unishelf.Server.Migrations
             modelBuilder.Entity("Unishelf.Models.User", b =>
                 {
                     b.Navigation("Cart");
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("Unishelf.Server.Models.Brands", b =>
@@ -344,11 +512,21 @@ namespace Unishelf.Server.Migrations
                     b.Navigation("Products");
                 });
 
+            modelBuilder.Entity("Unishelf.Server.Models.Order", b =>
+                {
+                    b.Navigation("DeliveryAddresses")
+                        .IsRequired();
+
+                    b.Navigation("OrderItems");
+                });
+
             modelBuilder.Entity("Unishelf.Server.Models.Products", b =>
                 {
                     b.Navigation("Cart");
 
                     b.Navigation("Images");
+
+                    b.Navigation("OrderItem");
                 });
 #pragma warning restore 612, 618
         }

@@ -18,12 +18,6 @@ namespace Unishelf.Server.Services.Users
         private readonly PasswordHasher _passwordHasher;
         private readonly IConfiguration _configuration;
 
-
-
-
-
-
-
         public UserService(ApplicationDbContext dbContext, PasswordHasher passwordHasher, IConfiguration configuration, EncryptionHelper encryptionHelper)
         {
             _dbContext = dbContext;
@@ -44,26 +38,37 @@ namespace Unishelf.Server.Services.Users
                 EmailAddress = email,
                 Password = hashedPassword,
                 LastLogIn = DateTime.Now,
-                Active = true, // Set default active status to true
+                Active = true,
+                IsCustomer = true,
             };
 
             _dbContext.User.Add(user);
-            await _dbContext.SaveChangesAsync();
-            return true;
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+                return true;
+            }
+            catch (DbUpdateException ex)
+            {
+                //Handle the exception
+                Console.Error.WriteLine($"Error saving user to database: {ex.Message}");
+                return false;
+            }
+
         }
 
         public async Task<(bool success, string token, string message)> Login(string usernameOrEmail, string password)
         {
             var user = await _dbContext.User
-                .Where(u => (u.UserName == usernameOrEmail || u.EmailAddress == usernameOrEmail) && u.Active == true) // Added check for Active == true
+                .Where(u => (u.UserName == usernameOrEmail || u.EmailAddress == usernameOrEmail) && u.Active == true)
                 .Select(u => new
                 {
-                    u.UserID,
+                    UserID = _encryptionHelper.Encrypt(u.UserID.ToString()),
                     u.UserName,
                     Name = u.FirstName + " " + u.LastName,
                     u.EmailAddress,
                     u.PhoneNumber,
-                    u.Password, // Assuming this is VARBINARY
+                    u.Password,
                     u.IsCustomer,
                     u.IsEmployee,
                     u.IsManager
@@ -72,29 +77,26 @@ namespace Unishelf.Server.Services.Users
 
             if (user == null)
             {
-                return (false, null, "Invalid username or email or account is inactive."); // Modified message to reflect inactive account
+                return (false, null, "Invalid username or email or account is inactive.");
             }
 
-            // Verify password (assuming stored as a byte array)
             if (!_passwordHasher.VerifyPassword(password, user.Password))
             {
                 return (false, null, "Invalid password.");
             }
 
-            // Update last login timestamp
-            var dbUser = await _dbContext.User.FindAsync(user.UserID);
-            if (dbUser != null) // Ensure user still exists in the context
+            var decryptedUserID = int.Parse(_encryptionHelper.Decrypt(user.UserID));
+            var dbUser = await _dbContext.User.FindAsync(decryptedUserID);
+            if (dbUser != null)
             {
                 dbUser.LastLogIn = DateTime.Now;
                 await _dbContext.SaveChangesAsync();
             }
 
-            // Generate JWT token
             var token = GenerateJwtToken(user);
 
             return (true, token, "Login successful!");
         }
-
 
         private string GenerateJwtToken(dynamic user)
         {
@@ -103,19 +105,19 @@ namespace Unishelf.Server.Services.Users
 
             var claims = new[]
             {
-        new Claim("UserID", user.UserID.ToString()),
-        new Claim(ClaimTypes.Name, user.UserName),
-        new Claim(ClaimTypes.GivenName, user.Name),
-        new Claim(ClaimTypes.Email, user.EmailAddress),
-        new Claim("PhoneNumber", user.PhoneNumber),
-        new Claim("Role_Customer", user.IsCustomer.ToString()),
-        new Claim("Role_Employee", user.IsEmployee.ToString()),
-        new Claim("Role_Manager", user.IsManager.ToString())
-    };
-
+                new Claim("UserID", user.UserID.ToString()),
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.GivenName, user.Name),
+                new Claim(ClaimTypes.Email, user.EmailAddress),
+                new Claim("PhoneNumber", user.PhoneNumber),
+                new Claim("Role_Customer", user.IsCustomer.ToString()),
+                new Claim("Role_Employee", user.IsEmployee.ToString()),
+                new Claim("Role_Manager", user.IsManager.ToString())
+            };
+            Console.WriteLine($"Generating token with roles: Role_Customer={user.IsCustomer}, Role_Employee={user.IsEmployee}, Role_Manager={user.IsManager}");
             var token = new JwtSecurityToken(
-                issuer: "YourIssuer",
-                audience: "YourAudience",
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.Now.AddHours(1),
                 signingCredentials: creds
@@ -124,19 +126,17 @@ namespace Unishelf.Server.Services.Users
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-
         public async Task<List<string>> GetUserNames()
         {
             return await _dbContext.User.Select(u => u.UserName).ToListAsync();
         }
-
 
         public async Task<List<dynamic>> GetAllUsers()
         {
             var users = await _dbContext.User
                 .Select(u => new
                 {
-                    UserID = _encryptionHelper.Encrypt(u.UserID.ToString()),  // Encrypt UserID
+                    UserID = _encryptionHelper.Encrypt(u.UserID.ToString()),
                     u.UserName,
                     Name = u.FirstName + " " + u.LastName,
                     u.EmailAddress,
@@ -151,8 +151,6 @@ namespace Unishelf.Server.Services.Users
 
             return users.Cast<dynamic>().ToList();
         }
-
-
 
         public async Task<List<User>> GetAllUsersAsync()
         {
@@ -186,7 +184,5 @@ namespace Unishelf.Server.Services.Users
 
             return true;
         }
-
-
     }
 }

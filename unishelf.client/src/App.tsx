@@ -10,6 +10,9 @@ import BrandsandCategories from './BrandsandCategories';
 import UserManagement from './UserManagement';
 import AllBrands from './AllBrands';
 import AllProducts from './AllProducts';
+import Orders from './Orders';
+import MyOrders from './MyOrders';
+import Reports from './Reports';
 
 const App: React.FC = () => {
     const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
@@ -40,6 +43,9 @@ const App: React.FC = () => {
                 <Route path="/LogIn" element={<LogIn setLoggedInUser={setLoggedInUser} />} />
                 <Route path="/Dashboard" element={<Dashboard />} />
                 <Route path="/Products" element={<Products />} />
+                <Route path="/Orders" element={<Orders />} />
+                <Route path="/MyOrders" element={<MyOrders />} />
+                <Route path="/Reports" element={<Reports />} />
                 <Route path="/BrandsandCategories" element={<BrandsandCategories />} />
                 <Route path="/UserManagement" element={<UserManagement />} />
                 <Route path="/AllBrands/:categoryID" element={<AllBrands />} />

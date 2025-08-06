@@ -10,9 +10,9 @@ const Dashboard: React.FC = () => {
         { id: 1, label: 'Inventory', icon: <FaBoxes /> },
         { id: 2, label: 'Products', icon: <FaWarehouse />, href: '/products' },
         { id: 3, label: 'Brands and Categories', icon: <TbCategoryPlus />, href: '/BrandsandCategories' },
-        { id: 4, label: 'Reports', icon: <FaChartBar /> },
+        { id: 4, label: 'Reports', icon: <FaChartBar />, href: '/Reports' },
         { id: 5, label: 'Users Management', icon: <ImUsers />, href:'/UserManagement' },
-        { id: 6, label: 'Orders', icon: <FaCartFlatbed /> },
+        { id: 6, label: 'Orders', icon: <FaCartFlatbed />, href: '/Orders' },
     ];
 
     return (

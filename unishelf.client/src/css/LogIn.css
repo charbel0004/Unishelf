@@ -15,11 +15,13 @@
     color:white;
 }
 
+.home-login{
+    margin-top: 5%;
+}
 .row {
     display: flex;
-    flex-direction:row;
+    flex-direction: row;
     gap: 5px;
-    
 }
 
     .row > div {

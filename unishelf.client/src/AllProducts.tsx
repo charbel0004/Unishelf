@@ -42,15 +42,89 @@ interface CartProduct {
     name: string;
     price: number;
     quantity: number;
+    image: string | null;
+    currency: string;
 }
+
+interface ToastProps {
+    message: string;
+    type?: 'success' | 'error' | 'info';
+    onClose: () => void;
+    duration?: number;
+}
+
+const Toast: React.FC<ToastProps> = ({ message, type = 'info', onClose, duration = 3000 }) => {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onClose();
+        }, duration);
+
+        return () => clearTimeout(timer);
+    }, [duration, onClose]);
+
+    return (
+        <div
+            className={`allProducts-toast allProducts-toast-${type}`}
+            role="alert"
+            aria-live="assertive"
+            aria-atomic="true"
+        >
+            {message}
+        </div>
+    );
+};
 
 const sessionCart = {
     get: (): CartProduct[] => {
         const cart = sessionStorage.getItem('cart');
-        return cart ? JSON.parse(cart) : [];
+        const items = cart ? JSON.parse(cart) : [];
+        const normalizedItems = items.map((item: CartProduct) => ({
+            ...item,
+            currency: item.currency || 'USD',
+        }));
+        const mergedItems = normalizedItems.reduce((acc: CartProduct[], item: CartProduct) => {
+            const existingItem = acc.find((i) => i.id === item.id);
+            if (existingItem) {
+                existingItem.quantity += item.quantity;
+                return acc;
+            }
+            return [...acc, item];
+        }, []);
+        console.log('Retrieved sessionCart:', mergedItems.map(i => ({ id: i.id, name: i.name })));
+        return mergedItems;
     },
     set: (cart: CartProduct[]) => {
-        sessionStorage.setItem('cart', JSON.stringify(cart));
+        const normalizedCart = cart.map((item) => ({
+            ...item,
+            currency: item.currency || 'USD',
+        }));
+        const mergedCart = normalizedCart.reduce((acc: CartProduct[], item: CartProduct) => {
+            const existingItem = acc.find((i) => i.id === item.id);
+            if (existingItem) {
+                existingItem.quantity += item.quantity;
+                return acc;
+            }
+            return [...acc, item];
+        }, []);
+        console.log('Saving to sessionCart:', mergedCart.map(i => ({ id: i.id, name: i.name })));
+        sessionStorage.setItem('cart', JSON.stringify(mergedCart));
+    },
+    add: (item: CartProduct) => {
+        if (!item.id || item.id.length < 10) {
+            console.warn('Invalid product ID:', item.id);
+            return;
+        }
+        const currentCart = sessionCart.get();
+        const newItem = {
+            ...item,
+            currency: item.currency || 'USD',
+        };
+        const updatedCart = [...currentCart, newItem];
+        sessionCart.set(updatedCart);
+    },
+    clear: () => {
+        console.log('Clearing sessionCart');
+        sessionStorage.removeItem('cart');
     },
 };
 
@@ -189,6 +263,41 @@ const AllProducts: React.FC = () => {
     const [roomHeight, setRoomHeight] = useState<string>('');
     const [calculatedBoxes, setCalculatedBoxes] = useState<number>(1);
     const [mainImage, setMainImage] = useState<string | null>(null);
+    const [userId, setUserId] = useState<string | null>(null);
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+    const lastAddRef = useRef<string | null>(null);
+    const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+        setToast({ message, type });
+    };
+
+    const handleCloseToast = () => {
+        setToast(null);
+    };
+
+    useEffect(() => {
+        // Clear stale cart data on component mount
+        sessionCart.clear();
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const decodedToken = config.getDecodedToken();
+                const userId = decodedToken['UserID'] || null;
+                setUserId(userId);
+                if (!userId) {
+                    console.warn('UserID is null in decoded token:', decodedToken);
+                }
+            } catch (err) {
+                console.error('Error decoding token:', err);
+                setUserId(null);
+            }
+        } else {
+            console.warn('No token found in localStorage');
+            setUserId(null);
+        }
+    }, []);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -197,17 +306,15 @@ const AllProducts: React.FC = () => {
                 setLoading(false);
                 return;
             }
-
             try {
                 const response = await fetch(
                     `${config.API_URL}/api/StockManager/active-products-by-brand-and-category?brandId=${brandID}&categoryId=${categoryID}`
                 );
-
                 if (!response.ok) {
                     throw new Error(`Failed to fetch products: ${response.status} ${response.statusText}`);
                 }
-
                 const data: Product[] = await response.json();
+                console.log('Fetched products:', data.map(p => ({ productID: p.productID, productName: p.productName })));
                 setProducts(data);
                 setFilteredProducts(data);
             } catch (err) {
@@ -217,7 +324,6 @@ const AllProducts: React.FC = () => {
                 setLoading(false);
             }
         };
-
         fetchProducts();
     }, [brandID, categoryID]);
 
@@ -240,7 +346,8 @@ const AllProducts: React.FC = () => {
     }, [selectedProduct]);
 
     const fetchProductDetails = async (productID: string) => {
-        if (!productID) {
+        if (!productID || productID.length < 10) {
+            console.warn('Invalid productID:', productID);
             setDetailsError('Invalid product ID provided.');
             return;
         }
@@ -254,10 +361,10 @@ const AllProducts: React.FC = () => {
             }
 
             const productData = await response.json();
-            console.log('Raw product details response:', productData);
+            console.log('Fetched product details:', { productID: productData.ProductID, productName: productData.ProductName });
 
-            if (!productData) {
-                throw new Error('Product not found.');
+            if (!productData || productData.Error) {
+                throw new Error(productData.Error || 'Product not found.');
             }
 
             const getValue = (obj: any, keys: string[]): string | number | boolean | null => {
@@ -287,9 +394,9 @@ const AllProducts: React.FC = () => {
                 currency: getValue(productData, ['Currency', 'currency']) as string || 'USD',
                 price: getValue(productData, ['Price', 'price']) !== 0 ? getValue(productData, ['Price', 'price']) as number : '',
                 pricePerMsq: getValue(productData, ['PricePerMsq', 'pricePerMsq']) !== 0 ? getValue(productData, ['PricePerMsq', 'pricePerMsq']) as number : '',
-                height: getValue(productData, ['Height', 'height']) !== 0 ? (getValue(productData, ['Height', 'height']) as number) / 10 : '',
-                width: getValue(productData, ['Width', 'width']) !== 0 ? (getValue(productData, ['Width', 'width']) as number) / 10 : '',
-                depth: getValue(productData, ['Depth', 'depth']) !== 0 ? (getValue(productData, ['Depth', 'depth']) as number) / 10 : '',
+                height: getValue(productData, ['Height', 'height']) !== 0 ? getValue(productData, ['Height', 'height']) as number : '',
+                width: getValue(productData, ['Width', 'width']) !== 0 ? getValue(productData, ['Width', 'width']) as number : '',
+                depth: (typeof getValue(productData, ['Depth', 'depth']) === 'number' && getValue(productData, ['Depth', 'depth']) > 0) ? getValue(productData, ['Depth', 'depth']) as number : '',
                 sqmPerBox: getValue(productData, ['SqmPerBox', 'sqmPerBox']) !== 0 ? getValue(productData, ['SqmPerBox', 'sqmPerBox']) as number : '',
                 qtyPerBox: getValue(productData, ['QtyPerBox', 'qtyPerBox']) !== 0 ? getValue(productData, ['QtyPerBox', 'qtyPerBox']) as number : '',
                 available: getValue(productData, ['Available', 'available']) as boolean ?? false,
@@ -341,7 +448,7 @@ const AllProducts: React.FC = () => {
         }
 
         const baseBoxesNeeded = totalSqm / Number(selectedProduct.sqmPerBox);
-        const boxesWithExtra = Math.ceil(baseBoxesNeeded * 1.1); // Add 10% and round up
+        const boxesWithExtra = Math.ceil(baseBoxesNeeded * 1.1);
         setCalculatedBoxes(boxesWithExtra);
     };
 
@@ -362,33 +469,41 @@ const AllProducts: React.FC = () => {
             return;
         }
         if (selectedProduct?.quantity !== '' && newValue > Number(selectedProduct.quantity)) {
-            alert('Requested quantity exceeds available stock.');
+            showToast('Requested quantity exceeds available stock.', 'error');
             return;
         }
         setCalculatedBoxes(newValue);
     };
 
-    const addToCart = () => {
+    const addToCart = async (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+        if (isAddingToCart) {
+            console.log('Duplicate addToCart attempt blocked: already adding');
+            return;
+        }
+
         if (!selectedProduct || !calculatedBoxes || calculatedBoxes <= 0) {
-            alert('Please select a valid quantity before adding to cart.');
+            console.warn('Invalid cart addition: missing product or quantity');
+            showToast('Please select a valid quantity before adding to cart.', 'error');
             return;
         }
 
-        if (!selectedProduct.productID) {
-            alert('Cannot add to cart: Product ID is missing.');
+        if (!selectedProduct.productID || selectedProduct.productID.length < 10) {
+            console.warn('Invalid cart addition: missing or invalid productID', selectedProduct.productID);
+            showToast('Cannot add to cart: Product ID is invalid.', 'error');
             return;
         }
 
-        // Calculate price per box
         const pricePerBox =
-            selectedProduct.pricePerMsq !== ''
-                ? Number(selectedProduct.sqmPerBox) * Number(selectedProduct.pricePerMsq)
-                : selectedProduct.price !== ''
-                    ? Number(selectedProduct.price)
+            selectedProduct.price !== '' && Number(selectedProduct.price) > 0
+                ? Number(selectedProduct.price)
+                : selectedProduct.pricePerMsq !== '' && selectedProduct.sqmPerBox !== '' && Number(selectedProduct.pricePerMsq) > 0
+                    ? Number(selectedProduct.sqmPerBox) * Number(selectedProduct.pricePerMsq)
                     : 0;
 
         if (pricePerBox === 0) {
-            alert('Cannot add to cart: Price information is missing.');
+            console.warn('Invalid cart addition: missing price information');
+            showToast('Cannot add to cart: Price information is missing.', 'error');
             return;
         }
 
@@ -397,21 +512,69 @@ const AllProducts: React.FC = () => {
             name: selectedProduct.productName,
             price: pricePerBox,
             quantity: calculatedBoxes,
+            image: selectedProduct.images?.[0]?.imageData || null,
+            currency: selectedProduct.currency,
         };
 
-        // Update cart in sessionStorage
-        const updatedCart = [...sessionCart.get()];
-        const existingItem = updatedCart.find((item) => item.id === cartProduct.id);
-
-        if (existingItem) {
-            existingItem.quantity += cartProduct.quantity;
-        } else {
-            updatedCart.push(cartProduct);
+        const requestId = `${userId || 'guest'}-${selectedProduct.productID}-${calculatedBoxes}-${Date.now()}`;
+        if (lastAddRef.current === requestId) {
+            console.log('Duplicate addToCart attempt blocked: same request ID', requestId);
+            return;
         }
+        lastAddRef.current = requestId;
 
-        sessionCart.set(updatedCart);
+        if (debounceTimeoutRef.current) {
+            console.log('Duplicate addToCart attempt blocked: debounce active');
+            return;
+        }
+        debounceTimeoutRef.current = setTimeout(() => {
+            debounceTimeoutRef.current = null;
+        }, 500);
 
-        alert(`${calculatedBoxes} box${calculatedBoxes > 1 ? 'es' : ''} of ${selectedProduct.productName} added to cart!`);
+        console.log('Adding to cart:', { encryptedUserId: userId, encryptedProductId: selectedProduct.productID, quantity: calculatedBoxes });
+        setIsAddingToCart(true);
+        try {
+            if (userId) {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    console.warn('No token found for logged-in user');
+                    throw new Error('Authentication token is missing.');
+                }
+                const response = await fetch(`${config.API_URL}/api/Cart/Add`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        encryptedUserId: userId,
+                        encryptedProductId: selectedProduct.productID,
+                        quantity: calculatedBoxes,
+                    }),
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    console.error('Failed to add to cart:', data);
+                    showToast(`Failed to add item to cart: ${data.error || 'Unknown error'}`, 'error');
+                    return;
+                }
+                console.log('Cart add response:', data);
+                window.dispatchEvent(new Event('cartUpdated'));
+                showToast(`${calculatedBoxes} box${calculatedBoxes > 1 ? 'es' : ''} of ${selectedProduct.productName} added to cart!`, 'success');
+                handleCloseOverlay();
+            } else {
+                console.log('User not logged in, adding to session cart');
+                sessionCart.add(cartProduct);
+                showToast(`${calculatedBoxes} box${calculatedBoxes > 1 ? 'es' : ''} of ${selectedProduct.productName} added to cart!`, 'success');
+                handleCloseOverlay();
+            }
+        } catch (err: any) {
+            console.error('Error adding to cart:', err);
+            showToast(`Error adding item to cart: ${err.message || 'Please try again.'}`, 'error');
+        } finally {
+            setIsAddingToCart(false);
+            lastAddRef.current = null;
+        }
     };
 
     const handleThumbnailClick = (imageData: string) => {
@@ -458,7 +621,6 @@ const AllProducts: React.FC = () => {
                             </li>
                         </ol>
                     </nav>
-
                     <input
                         type="text"
                         placeholder="Search products..."
@@ -468,11 +630,9 @@ const AllProducts: React.FC = () => {
                         aria-label="Search products"
                     />
                 </div>
-
                 <p className="allProducts-counter">
                     {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
                 </p>
-
                 {filteredProducts.length > 0 ? (
                     filteredProducts.map((product) => (
                         <div
@@ -522,12 +682,10 @@ const AllProducts: React.FC = () => {
                         >
                             X
                         </button>
-
                         {detailsLoading && <p className="allProducts-loading">Loading product details...</p>}
                         {detailsError && <p className="allProducts-error">{detailsError}</p>}
-
                         {!detailsLoading && !detailsError && (
-                            <>
+                            <div className="allProducts-overlay-inner">
                                 <div className="allProducts-overlay-top">
                                     <div className="allProducts-overlay-left">
                                         <div className="allProducts-overlay-images">
@@ -567,59 +725,67 @@ const AllProducts: React.FC = () => {
                                             </div>
                                         </div>
                                     </div>
-
                                     <div className="allProducts-overlay-right">
                                         <h3>Product Details</h3>
                                         <div className="allProducts-product-details">
-                                            <div className="allProducts-detail-item">
-                                                <strong>Name:</strong> {selectedProduct.productName || 'N/A'}
-                                            </div>
-                                            <div className="allProducts-detail-item">
-                                                <strong>Brand:</strong> {selectedProduct.brandName || 'N/A'}
-                                            </div>
-                                            <div className="allProducts-detail-item">
-                                                <strong>Category:</strong> {selectedProduct.categoryName || 'N/A'}
-                                            </div>
-                                            <div className="allProducts-detail-item">
-                                                <strong>Description:</strong> {selectedProduct.description || 'N/A'}
-                                            </div>
-                                            <div className="allProducts-detail-item">
-                                                <strong>Height:</strong>{' '}
-                                                {selectedProduct.height ? `${selectedProduct.height} cm` : 'N/A'}
-                                            </div>
-                                            <div className="allProducts-detail-item">
-                                                <strong>Width:</strong>{' '}
-                                                {selectedProduct.width ? `${selectedProduct.width} cm` : 'N/A'}
-                                            </div>
-                                            <div className="allProducts-detail-item">
-                                                <strong>Depth:</strong>{' '}
-                                                {selectedProduct.depth ? `${selectedProduct.depth} cm` : 'N/A'}
-                                            </div>
-                                            <div className="allProducts-detail-item">
-                                                <strong>Price per m²:</strong>{' '}
-                                                {selectedProduct.pricePerMsq
-                                                    ? `${selectedProduct.pricePerMsq} ${selectedProduct.currency}`
-                                                    : 'N/A'}
-                                            </div>
-                                            <div className="allProducts-detail-item">
-                                                <strong>Price:</strong>{' '}
-                                                {selectedProduct.price
-                                                    ? `${selectedProduct.price} ${selectedProduct.currency}`
-                                                    : 'N/A'}
-                                            </div>
-                                            <div className="allProducts-detail-item">
-                                                <strong>m² per box:</strong>{' '}
-                                                {selectedProduct.sqmPerBox
-                                                    ? `${selectedProduct.sqmPerBox} m²`
-                                                    : 'N/A'}
-                                            </div>
-                                            <div className="allProducts-detail-item">
-                                                <strong>Qty per box:</strong> {selectedProduct.qtyPerBox || 'N/A'}
-                                            </div>
+                                            {selectedProduct.productName && (
+                                                <div className="allProducts-detail-item">
+                                                    <strong>Name:</strong> {selectedProduct.productName}
+                                                </div>
+                                            )}
+                                            {selectedProduct.brandName && (
+                                                <div className="allProducts-detail-item">
+                                                    <strong>Brand:</strong> {selectedProduct.brandName}
+                                                </div>
+                                            )}
+                                            {selectedProduct.categoryName && (
+                                                <div className="allProducts-detail-item">
+                                                    <strong>Category:</strong> {selectedProduct.categoryName}
+                                                </div>
+                                            )}
+                                            {selectedProduct.description && (
+                                                <div className="allProducts-detail-item">
+                                                    <strong>Description:</strong> {selectedProduct.description}
+                                                </div>
+                                            )}
+                                            {selectedProduct.height !== '' && (
+                                                <div className="allProducts-detail-item">
+                                                    <strong>Height:</strong> {selectedProduct.height} cm
+                                                </div>
+                                            )}
+                                            {selectedProduct.width !== '' && (
+                                                <div className="allProducts-detail-item">
+                                                    <strong>Width:</strong> {selectedProduct.width} cm
+                                                </div>
+                                            )}
+                                            {selectedProduct.depth !== '' && (
+                                                <div className="allProducts-detail-item">
+                                                    <strong>Depth:</strong> {selectedProduct.depth} cm
+                                                </div>
+                                            )}
+                                            {selectedProduct.pricePerMsq !== '' && (
+                                                <div className="allProducts-detail-item">
+                                                    <strong>Price per m²:</strong> {selectedProduct.pricePerMsq} {selectedProduct.currency}
+                                                </div>
+                                            )}
+                                            {selectedProduct.price !== '' && (
+                                                <div className="allProducts-detail-item">
+                                                    <strong>Price:</strong> {selectedProduct.price} {selectedProduct.currency}
+                                                </div>
+                                            )}
+                                            {selectedProduct.sqmPerBox !== '' && (
+                                                <div className="allProducts-detail-item">
+                                                    <strong>m² per box:</strong> {selectedProduct.sqmPerBox} m²
+                                                </div>
+                                            )}
+                                            {selectedProduct.qtyPerBox !== '' && (
+                                                <div className="allProducts-detail-item">
+                                                    <strong>Qty per box:</strong> {selectedProduct.qtyPerBox}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
-
                                 {isProductOutOfStock(selectedProduct) && (
                                     <p className="allProducts-out-of-stock">
                                         This product is currently out of stock; it will be available once we restock.
@@ -753,22 +919,22 @@ const AllProducts: React.FC = () => {
                                                         selectedProduct.price !== '') && (
                                                             <p>
                                                                 <strong>Total Price:</strong>{' '}
-                                                                {selectedProduct.pricePerMsq !== ''
+                                                                {selectedProduct.price !== '' && Number(selectedProduct.price) > 0
                                                                     ? formatNumberWithSpaces(
                                                                         Number(
                                                                             (
                                                                                 calculatedBoxes *
-                                                                                Number(selectedProduct.sqmPerBox) *
-                                                                                Number(selectedProduct.pricePerMsq)
+                                                                                Number(selectedProduct.price)
                                                                             ).toFixed(2)
                                                                         )
                                                                     )
-                                                                    : selectedProduct.price !== ''
+                                                                    : selectedProduct.pricePerMsq !== '' && selectedProduct.sqmPerBox !== ''
                                                                         ? formatNumberWithSpaces(
                                                                             Number(
                                                                                 (
                                                                                     calculatedBoxes *
-                                                                                    Number(selectedProduct.price)
+                                                                                    Number(selectedProduct.sqmPerBox) *
+                                                                                    Number(selectedProduct.pricePerMsq)
                                                                                 ).toFixed(2)
                                                                             )
                                                                         )
@@ -780,23 +946,32 @@ const AllProducts: React.FC = () => {
                                                         onClick={addToCart}
                                                         className="allProducts-add-to-cart-button"
                                                         disabled={
+                                                            isAddingToCart ||
                                                             detailsLoading ||
                                                             (selectedProduct.quantity !== '' &&
                                                                 calculatedBoxes > Number(selectedProduct.quantity))
                                                         }
                                                         aria-label={`Add ${calculatedBoxes} boxes of ${selectedProduct.productName} to cart`}
                                                     >
-                                                        Add to Cart
+                                                        {isAddingToCart ? 'Adding...' : 'Add to Cart'}
                                                     </button>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 )}
-                            </>
+                            </div>
                         )}
                     </div>
                 </div>
+            )}
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={handleCloseToast}
+                    duration={3000}
+                />
             )}
         </div>
     );

@@ -108,6 +108,7 @@ const Products: React.FC = () => {
     const [detailsError, setDetailsError] = useState<string | null>(null);
     const [isPriceManuallyEdited, setIsPriceManuallyEdited] = useState<boolean>(false);
     const [searchQuery, setSearchQuery] = useState<string>("");
+    const [inputValues, setInputValues] = useState<{ [key in keyof ProductDetails]?: string }>({});
 
     const isFormValid = (): boolean => {
         if (!editableProduct) return false;
@@ -266,13 +267,24 @@ const Products: React.FC = () => {
                 }
             }
 
+            const brandID = productData.brandID || productData.BrandID || "";
+            const brandName = productData.brandName || productData.BrandName || "";
+
+            const brandExists = brands.some(brand => brand.brandID === brandID);
+            if (!brandExists && brandID) {
+                console.warn(
+                    `BrandID ${brandID} (BrandName: ${brandName}) for product ${productID} not found in available brands:`,
+                    brands
+                );
+            }
+
             const processedData: ProductDetails = {
                 productID: productData.productID || productData.ProductID || null,
                 productName: productData.productName || productData.ProductName || null,
                 categoryID,
                 categoryName,
-                brandID: productData.brandID || productData.BrandID || "",
-                brandName: productData.brandName || productData.BrandName || "",
+                brandID,
+                brandName,
                 description: productData.description || productData.Description || null,
                 height: productData.height === 0 ? null : productData.height ?? null,
                 width: productData.width === 0 ? null : productData.width ?? null,
@@ -287,8 +299,15 @@ const Products: React.FC = () => {
                 images: processedImages,
             };
 
+            console.log("Fetched Product Details:", processedData);
+
             setSelectedProduct(processedData);
             setEditableProduct(processedData);
+            setInputValues({
+                pricePerMsq: processedData.pricePerMsq !== null ? formatNumber(processedData.pricePerMsq, true) : "",
+                sqmPerBox: processedData.sqmPerBox !== null ? formatNumber(processedData.sqmPerBox, true) : "",
+                price: processedData.price !== null ? formatNumber(processedData.price, true) : "",
+            });
             setDetailsError(null);
         } catch (err: any) {
             console.error("Error fetching product details:", err);
@@ -315,18 +334,26 @@ const Products: React.FC = () => {
         setMainImage(null);
         setDetailsError(null);
         setIsPriceManuallyEdited(false);
+        setInputValues({});
     };
 
-    const formatNumber = (value: number | null | undefined): string => {
+    const formatNumber = (value: number | null | undefined, isDecimal: boolean = false): string => {
         if (value === null || value === undefined) return "";
-        return String(value);
+        if (isDecimal) {
+            return value.toFixed(2);
+        }
+        return Math.floor(value).toString();
     };
 
     const parseFloatValue = (value: string): number | null => {
         if (value === "") return null;
-        const cleanValue = value.replace(/,/g, "");
+        const cleanValue = value.replace(/,/g, ".").replace(/\s/g, "");
+        if (!/^-?\d*\.?\d{0,2}$/.test(cleanValue)) {
+            return null;
+        }
         const num = parseFloat(cleanValue);
-        return isNaN(num) ? null : num;
+        if (isNaN(num)) return null;
+        return Number(num.toFixed(2));
     };
 
     const parseIntValue = (value: string): number | null => {
@@ -339,10 +366,13 @@ const Products: React.FC = () => {
     const calculatePrice = (pricePerMsq: number | null, sqmPerBox: number | null): number | null => {
         if (pricePerMsq === null || sqmPerBox === null) return null;
         const price = Number(pricePerMsq) * Number(sqmPerBox);
-        return isNaN(price) ? null : price;
+        if (isNaN(price)) return null;
+        return Number(price.toFixed(2));
     };
 
     const handleInputChange = (field: keyof ProductDetails, value: string) => {
+        setInputValues((prev) => ({ ...prev, [field]: value }));
+
         setEditableProduct((prev) => {
             if (!prev) return null;
 
@@ -353,6 +383,10 @@ const Products: React.FC = () => {
             const stringFields: (keyof ProductDetails)[] = ["productName", "description", "currency"];
 
             if (intFields.includes(field)) {
+                if (value.includes(".")) {
+                    alert(`Invalid input for ${field}. Please enter an integer (no decimals).`);
+                    return prev;
+                }
                 parsedValue = parseIntValue(value);
                 if (parsedValue === null && value !== "") {
                     alert(`Invalid input for ${field}. Please enter a valid integer.`);
@@ -360,10 +394,6 @@ const Products: React.FC = () => {
                 }
             } else if (floatFields.includes(field)) {
                 parsedValue = parseFloatValue(value);
-                if (parsedValue === null && value !== "") {
-                    alert(`Invalid input for ${field}. Please enter a valid number.`);
-                    return prev;
-                }
             } else if (stringFields.includes(field)) {
                 parsedValue = value === "" ? null : value;
             } else {
@@ -379,6 +409,7 @@ const Products: React.FC = () => {
             if (!isPriceManuallyEdited && (field === "pricePerMsq" || field === "sqmPerBox")) {
                 const newPrice = calculatePrice(updatedProduct.pricePerMsq, updatedProduct.sqmPerBox);
                 updatedProduct.price = newPrice;
+                setInputValues((prev) => ({ ...prev, price: newPrice !== null ? formatNumber(newPrice, true) : "" }));
             }
 
             return updatedProduct;
@@ -468,7 +499,7 @@ const Products: React.FC = () => {
             }
 
             try {
-                const response = await fetch(`${config.API_URL}/api/Stockcreated by xAI. Manager/DeleteImage/${imageObj.imageID}`, {
+                const response = await fetch(`${config.API_URL}/api/StockManager/DeleteImage/${imageObj.imageID}`, {
                     method: "DELETE",
                 });
 
@@ -540,6 +571,19 @@ const Products: React.FC = () => {
             validationErrors.push("Please select a Brand.");
         }
 
+        // Validate float fields for format (but allow them to be empty/null)
+        const floatFields: { field: keyof ProductDetails; label: string }[] = [
+            { field: "pricePerMsq", label: "Price per m²" },
+            { field: "sqmPerBox", label: "m² per box" },
+            { field: "price", label: "Price" },
+        ];
+        for (const { field, label } of floatFields) {
+            const inputValue = inputValues[field] || "";
+            if (inputValue !== "" && parseFloatValue(inputValue) === null) {
+                validationErrors.push(`Invalid input for ${label}. Please enter a valid number (e.g., 12.34 or 12,34).`);
+            }
+        }
+
         if (validationErrors.length > 0) {
             alert(validationErrors.join("\n"));
             return;
@@ -568,6 +612,8 @@ const Products: React.FC = () => {
             },
         };
 
+        console.log("Saving Product:", requestBody);
+
         try {
             const response = await fetch(`${config.API_URL}/api/StockManager/AddorUpdateProduct`, {
                 method: "POST",
@@ -588,6 +634,7 @@ const Products: React.FC = () => {
             setNewProductImages([]);
             setMainImage(null);
             setIsPriceManuallyEdited(false);
+            setInputValues({});
 
             if (editableProduct.productID) {
                 await fetchProductDetails(editableProduct.productID);
@@ -609,7 +656,6 @@ const Products: React.FC = () => {
         }
     };
 
-    // Filter products based on search query
     const filteredProducts = products?.filter((product) =>
         product.productName.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -658,6 +704,7 @@ const Products: React.FC = () => {
                         setMainImage(null);
                         setDetailsError(null);
                         setIsPriceManuallyEdited(false);
+                        setInputValues({});
                     }}
                     className="add-product-button"
                 >
@@ -666,7 +713,17 @@ const Products: React.FC = () => {
             </div>
 
             <div className="products-grid">
-                {loading && <p>Loading...</p>}
+                {loading && products && (
+                    <div className="loading-placeholder">
+                        {products.map((product) => (
+                            <div key={product.productID} className="product-card placeholder">
+                                <div className="product-image-placeholder" />
+                                <h4 className="product-name-placeholder">{product.productName}</h4>
+                                <p className="product-quantity-placeholder">Quantity: {product.quantity}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
                 {error && (
                     <div className="error-container">
                         <p className="error">{error}</p>
@@ -883,9 +940,11 @@ const Products: React.FC = () => {
                                     </label>
                                     <input
                                         type="text"
-                                        value={formatNumber(editableProduct?.pricePerMsq)}
+                                        pattern="[0-9]*[.,]?[0-9]{0,2}"
+                                        value={inputValues.pricePerMsq !== undefined ? inputValues.pricePerMsq : (editableProduct?.pricePerMsq !== null ? formatNumber(editableProduct?.pricePerMsq, true) : "")}
                                         onChange={(e) => handleInputChange("pricePerMsq", e.target.value)}
                                         className="full-width-input no-arrows"
+                                        placeholder="e.g., 12.34 or 12,34"
                                     />
                                 </div>
                                 <div className="grid-item">
@@ -894,9 +953,11 @@ const Products: React.FC = () => {
                                     </label>
                                     <input
                                         type="text"
-                                        value={formatNumber(editableProduct?.sqmPerBox)}
+                                        pattern="[0-9]*[.,]?[0-9]{0,2}"
+                                        value={inputValues.sqmPerBox !== undefined ? inputValues.sqmPerBox : (editableProduct?.sqmPerBox !== null ? formatNumber(editableProduct?.sqmPerBox, true) : "")}
                                         onChange={(e) => handleInputChange("sqmPerBox", e.target.value)}
                                         className="full-width-input no-arrows"
+                                        placeholder="e.g., 12.34 or 12,34"
                                     />
                                 </div>
                                 <div className="grid-item">
@@ -916,9 +977,11 @@ const Products: React.FC = () => {
                                     </label>
                                     <input
                                         type="text"
-                                        value={formatNumber(editableProduct?.price)}
+                                        pattern="[0-9]*[.,]?[0-9]{0,2}"
+                                        value={inputValues.price !== undefined ? inputValues.price : (editableProduct?.price !== null ? formatNumber(editableProduct?.price, true) : "")}
                                         onChange={(e) => handleInputChange("price", e.target.value)}
                                         className="full-width-input no-arrows"
+                                        placeholder="e.g., 12.34 or 12,34"
                                     />
                                 </div>
                                 <div className="grid-item">

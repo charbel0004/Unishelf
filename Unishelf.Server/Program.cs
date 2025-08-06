@@ -8,15 +8,13 @@ using Microsoft.IdentityModel.Tokens;
 using Unishelf.Server.Services.Users;
 using Unishelf.Server.Services.Products;
 using Unishelf.Server.Services.Dashboard;
-using Unishelf.Server.Migrations;
 using Unishelf.Server.Services.Cart;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
+
 // Add services to the container.
 builder.Services.AddControllers();
-
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -24,22 +22,28 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Register Data Protection`
-builder.Services.AddDataProtection(); // Add this to register IDataProtectionProvider
+// Register Data Protection
+builder.Services.AddDataProtection();
 
-// Register your custom PasswordHasher as a scoped service
-builder.Services.AddScoped<PasswordHasher>(); // Register _passwordHasher (or PasswordHasher if renamed)
+// Register PasswordHasher
+builder.Services.AddScoped<PasswordHasher>();
 
-// Register EncryptionHelper
+// Register Services
+builder.Services.AddHttpContextAccessor(); // Required for OrdersService
 builder.Services.AddSingleton<EncryptionHelper>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ProductsServices>();
 builder.Services.AddScoped<DashboardServices>();
 builder.Services.AddScoped<CartServices>();
+builder.Services.AddScoped<ReportsService>();
+builder.Services.AddScoped<OrderService>(); // For Create/CreateGuest
+builder.Services.AddScoped<OrdersService>(); // For GetAllOrders/UpdateStatus
 
 
 
-// Add services to the container.
+
+
+// Add Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -49,34 +53,36 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = configuration["Jwt:Issuer"],  // Read from appsettings.json
-            ValidAudience = configuration["Jwt:Audience"],  // Read from appsettings.json
+            ValidIssuer = configuration["Jwt:Issuer"],
+            ValidAudience = configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 System.Text.Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
-
-            ClockSkew = TimeSpan.Zero // Prevents delay in token expiry
+            ClockSkew = TimeSpan.Zero
         };
     });
 builder.Services.AddAuthorization();
 
-// Add services to the container
+
+
+// Add CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAllOrigins",
-        policy => policy.AllowAnyOrigin() // Allows all origins
-                        .AllowAnyHeader() // Allows any headers
-                        .AllowAnyMethod()); // Allows any HTTP method
+        policy => policy.AllowAnyOrigin()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod());
 });
 
 var app = builder.Build();
 
-// Serve static files (like images, CSS, etc.)
+// Serve static files
 app.UseDefaultFiles();
 app.UseStaticFiles();
+
 // Enable CORS
 app.UseCors("AllowAllOrigins");
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -84,6 +90,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapFallbackToFile("/index.html");

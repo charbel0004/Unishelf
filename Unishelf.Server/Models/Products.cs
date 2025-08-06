@@ -47,6 +47,7 @@ namespace Unishelf.Server.Models
         public Categories Categories { get; set; }
         public ICollection<Cart> Cart { get; set; }
         public ICollection<Images> Images { get; set; }
+        public ICollection<OrderItem> OrderItem { get; set; }
 
 
     }

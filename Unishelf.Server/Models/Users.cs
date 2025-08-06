@@ -41,5 +41,6 @@ namespace Unishelf.Models
         public DateTime? LastLogIn { get; set; }
 
         public ICollection<Cart> Cart {  get; set; }
+        public ICollection<Order> Order {  get; set; }
     }
 }

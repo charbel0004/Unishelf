@@ -54,7 +54,7 @@ const Login: FC<LoginProps> = ({ setLoggedInUser }) => {
                     const data = await response.json();
                     setUsernames(data);
                 } else {
-                   console.error('Failed to fetch usernames');
+                    console.error('Failed to fetch usernames');
                 }
             } catch (error) {
                 console.error('Error fetching usernames:', error);
@@ -96,10 +96,11 @@ const Login: FC<LoginProps> = ({ setLoggedInUser }) => {
         }
     };
 
-    const mergeSessionCart = async (token: string, username: string) => {
+    const mergeSessionCart = async (token: string, userId: string) => {
         const sessionCartItems = sessionCart.get();
-        if (sessionCartItems.length === 0) return;
+        if (sessionCartItems.length === 0) return true; // No items to merge
 
+        console.log('Merging session cart with encrypted userId:', userId);
         try {
             for (const item of sessionCartItems) {
                 const response = await fetch(`${config.API_URL}/api/Cart/Add-Cart-Items`, {
@@ -109,18 +110,24 @@ const Login: FC<LoginProps> = ({ setLoggedInUser }) => {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        userId: username,
-                        encryptedProductId: item.id,
+                        userId: userId, // Encrypted UserID; backend decrypts
+                        encryptedProductId: item.id, // Plain productID; backend encrypts
                         quantity: item.quantity,
                     }),
                 });
                 if (!response.ok) {
-                    console.error(`Failed to merge cart item ${item.id}`);
+                    const errorData = await response.json();
+                    console.error(`Failed to merge cart item ${item.id}:`, errorData);
+                    // Log error but don't throw to avoid interrupting sign-up success
+                    return false;
                 }
             }
             sessionCart.clear();
+            window.dispatchEvent(new Event('cartUpdated')); // Update Header.tsx
+            return true;
         } catch (error) {
             console.error('Error merging session cart:', error);
+            return false;
         }
     };
 
@@ -164,14 +171,24 @@ const Login: FC<LoginProps> = ({ setLoggedInUser }) => {
             const result = await response.json();
 
             if (response.ok) {
-                localStorage.setItem('token', result.token);
-                setLoggedInUser(formData.username);
                 if (isSignUp) {
-                    setSuccessMessage('User created successfully!');
-                    await mergeSessionCart(result.token, formData.username);
-                    window.location.reload();
+                    setSuccessMessage(result.message);
+                    setTimeout(() => {
+                        setIsSignUp(false); // Switch to login mode
+                        setSuccessMessage('');
+                        setErrorMessage('');
+                        navigate('/LogIn');
+                    }, 2000);
                 } else {
-                    await mergeSessionCart(result.token, formData.username);
+                    localStorage.setItem('token', result.token);
+                    const decodedToken = config.getDecodedToken();
+                    const userId = decodedToken?.UserID || '';
+                    setLoggedInUser(formData.username);
+
+                    const cartMerged = await mergeSessionCart(result.token, userId);
+                    if (!cartMerged) {
+                        setErrorMessage('Login successful, but failed to merge cart items. Please add them again.');
+                    }
                     navigate('/');
                 }
             } else {
@@ -193,7 +210,9 @@ const Login: FC<LoginProps> = ({ setLoggedInUser }) => {
                 formData.password &&
                 formData.confirmPassword &&
                 phoneNumber &&
-                !isUsernameTaken
+                !isUsernameTaken &&
+                !passwordError &&
+                !confirmPasswordError
             );
         } else {
             return (formData.username || formData.email) && formData.password;
@@ -318,7 +337,7 @@ const Login: FC<LoginProps> = ({ setLoggedInUser }) => {
                             </div>
                         </>
                     )}
-                    <button type="submit" disabled={!isFormValid()}>
+                    <button type="submit" className="home-login"disabled={!isFormValid()}>
                         {isSignUp ? 'Create Account' : 'Log In'}
                     </button>
                 </form>
@@ -331,6 +350,7 @@ const Login: FC<LoginProps> = ({ setLoggedInUser }) => {
                                 onClick={(e) => {
                                     e.preventDefault();
                                     setIsSignUp(false);
+                                    setErrorMessage(''); // Clear error message when switching forms
                                 }}
                             >
                                 Login
@@ -344,6 +364,7 @@ const Login: FC<LoginProps> = ({ setLoggedInUser }) => {
                                 onClick={(e) => {
                                     e.preventDefault();
                                     setIsSignUp(true);
+                                    setErrorMessage('');// Clear error message when switching forms
                                 }}
                             >
                                 Sign Up
@@ -359,3 +380,4 @@ const Login: FC<LoginProps> = ({ setLoggedInUser }) => {
 };
 
 export default Login;
+

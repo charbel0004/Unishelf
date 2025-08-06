@@ -1,0 +1,366 @@
+/* General Layout */
+.orders-admin {
+    background-color: #f1f5f9; /* Darker background */
+    min-height: 100vh;
+    padding: 24px 0; /* Slightly more padding */
+}
+
+.orders-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 36px; /* Increased padding */
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* Title with Icon */
+.title-container {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Larger gap */
+    margin-bottom: 36px;
+}
+
+.title-icon {
+    font-size: 28px; /* Larger icon */
+    color: #2b6cb0; /* Darker blue */
+}
+
+.orders-title {
+    font-size: 32px; /* Larger font */
+    font-weight: 700;
+    color: #1a202c; /* Darker text */
+    margin: 0;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 12px;
+}
+
+/* Status Messages */
+.orders-loading,
+.orders-error,
+.orders-empty {
+    text-align: center;
+    font-size: 18px; /* Larger font */
+    font-weight: 500;
+    color: #4B5EAA; /* Darker blue-gray */
+    padding: 24px; /* More padding */
+    background-color: #f1f5f9; /* Darker background */
+    border-radius: 8px;
+    margin: 24px 0;
+}
+
+/* Filter Container */
+.filter-container {
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.filter-label {
+    font-size: 16px; /* Larger font */
+    font-weight: 600;
+    color: #1a202c; /* Darker text */
+}
+
+.status-filter {
+    padding: 8px 12px; /* More padding */
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 16px; /* Larger font */
+    color: #1a202c; /* Darker text */
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .status-filter:hover,
+    .status-filter:focus {
+        border-color: #2b6cb0; /* Darker blue */
+        box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1);
+        outline: none;
+    }
+
+/* Tabs Navigation */
+.tabs-container {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 2px;
+}
+
+.tab-button {
+    padding: 12px 24px; /* More padding */
+    background-color: #f1f5f9; /* Darker background */
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 16px; /* Larger font */
+    font-weight: 600;
+    color: #4B5EAA; /* Darker blue-gray */
+    cursor: pointer;
+    transition: color 0.3s ease, border-bottom 0.3s ease, background-color 0.3s ease;
+    border-radius: 4px 4px 0 0;
+}
+
+    .tab-button:hover {
+        color: #1a202c; /* Darker hover */
+        background-color: #e2e8f0; /* Darker hover background */
+    }
+
+    .tab-button.active {
+        color: #1a202c; /* Darker text */
+        border-bottom: 2px solid #2b6cb0; /* Darker blue */
+        background-color: #f1f5f9;
+    }
+
+.tab-counter {
+    background-color: #e2e8f0;
+    color: #1a202c; /* Darker text */
+    font-size: 14px; /* Larger font */
+    padding: 3px 8px; /* Adjusted padding */
+    border-radius: 10px;
+    margin-left: 6px;
+}
+
+/* Orders Section */
+.orders-section {
+    margin-bottom: 48px; /* More spacing */
+}
+
+.section-title {
+    font-size: 24px; /* Larger font */
+    font-weight: 600;
+    color: #1a202c; /* Darker text */
+    margin-bottom: 18px;
+    border-left: 4px solid #2b6cb0; /* Darker blue */
+    padding-left: 12px;
+}
+
+/* Main Table Styling */
+.orders-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+    .orders-table th,
+    .orders-table td {
+        padding: 16px 20px; /* More padding */
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+        transition: background-color 0.2s ease;
+    }
+
+    .orders-table th {
+        background-color: #1a202c; /* Darker header */
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 16px; /* Larger font */
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .orders-table td {
+        color: #1a202c; /* Darker text */
+        font-size: 16px; /* Larger font */
+    }
+
+    .orders-table tr:hover {
+        background-color: #f1f5f9; /* Darker hover */
+    }
+
+/* Status Select Dropdown */
+.status-select {
+    padding: 8px 12px; /* More padding */
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 16px; /* Larger font */
+    color: #1a202c; /* Darker text */
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    margin-right: 14px;
+}
+
+    .status-select:hover,
+    .status-select:focus {
+        border-color: #2b6cb0; /* Darker blue */
+        box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.1);
+        outline: none;
+    }
+
+/* Expand Button */
+.expand-button {
+    padding: 8px 14px; /* More padding */
+    background-color: #2b6cb0; /* Darker blue */
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px; /* Larger font */
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+    .expand-button:hover {
+        background-color: #2c5282; /* Darker hover */
+        transform: translateY(-1px);
+    }
+
+    .expand-button:active {
+        transform: translateY(0);
+    }
+
+/* Expanded Row */
+.expanded-row {
+    background-color: #f1f5f9; /* Darker background */
+}
+
+.expanded-content {
+    padding: 24px; /* More padding */
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Nested Order Items Table */
+.order-items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+    .order-items-table th,
+    .order-items-table td {
+        padding: 12px 14px; /* More padding */
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 15px; /* Larger font */
+        color: #1a202c; /* Darker text */
+    }
+
+    .order-items-table th {
+        background-color: #e2e8f0; /* Darker header */
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .order-items-table td {
+        background-color: #ffffff;
+    }
+
+    .order-items-table tr:last-child td {
+        border-bottom: none;
+    }
+
+/* Delivery Address Section */
+.delivery-address {
+    background-color: #f1f5f9; /* Darker background */
+    padding: 18px; /* More padding */
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.address-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+    .address-table th {
+        background-color: #e2e8f0; /* Darker header */
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        padding: 12px 14px; /* More padding */
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 15px; /* Larger font */
+        color: #1a202c; /* Darker text */
+    }
+
+    .address-table td {
+        padding: 12px 14px; /* More padding */
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 15px; /* Larger font */
+        color: #1a202c; /* Darker text */
+        background-color: #ffffff;
+    }
+
+    .address-table tr:last-child td {
+        border-bottom: none;
+    }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .orders-container {
+        padding: 18px;
+    }
+
+    .orders-title {
+        font-size: 28px; /* Adjusted for mobile */
+    }
+
+    .title-icon {
+        font-size: 24px;
+    }
+
+    .section-title {
+        font-size: 20px;
+    }
+
+    .tabs-container {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .tab-button {
+        padding: 10px 18px;
+        font-size: 14px; /* Larger for mobile */
+    }
+
+    .tab-counter {
+        font-size: 12px; /* Larger for mobile */
+        padding: 2px 6px;
+    }
+
+    .orders-table th,
+    .orders-table td {
+        padding: 12px 14px;
+        font-size: 14px; /* Larger for mobile */
+    }
+
+    .status-select,
+    .expand-button,
+    .status-filter {
+        font-size: 14px; /* Larger for mobile */
+        padding: 6px 10px;
+    }
+
+    .order-items-table th,
+    .order-items-table td {
+        font-size: 13px; /* Larger for mobile */
+        padding: 10px 12px;
+    }
+
+    .address-table th,
+    .address-table td {
+        font-size: 13px; /* Larger for mobile */
+        padding: 10px 12px;
+    }
+
+    .filter-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .filter-label {
+        font-size: 14px; /* Larger for mobile */
+    }
+}
